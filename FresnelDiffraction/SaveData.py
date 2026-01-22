@@ -7,7 +7,7 @@ def setSheetNames(cols, col_names, col_widths, wb, sheet_name):
         ws = wb.active(sheet_name=sheet_name)
     else:
         ws = wb.create_sheet(sheet_name)
-    ws.row_dimensions[1].height = 25
+    ws.row_dimensions[1].height = 35
     for i in range(1, cols + 1):
         ws.cell(row=1, column=i).font = Font(bold=True)
         ws.cell(row=1, column=i).value = col_names[i - 1]

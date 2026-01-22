@@ -9,49 +9,59 @@ import math
 def createStructures(filename):
     def parseBeam(data_in):
         beam = data.Beam()
-        if len(data_in) < 7:
-            return [False, beam, 'missing mandatory beam data column']
-        angle = data.Distribution2D()
-        angle.x = float(data_in[0]) * 1E-3
-        if math.isnan(angle.x):
-            angle.x = 0
-        angle.y = float(data_in[3]) * 1E-3
-        if math.isnan(angle.y):
-            angle.y = 0
-        beam.angle = angle
-        curvature = data.Distribution2D()
-        curvature.x = float(data_in[1])
-        if math.isnan(curvature.x):
-            curvature.x = 0
-        curvature.y = float(data_in[4])
-        if math.isnan(curvature.y):
-            curvature.y = 0
-        beam.curvature = curvature
-        waist = data.Distribution2D()
-        waist.x = float(data_in[2])
-        waist.y = float(data_in[5])
-        if math.isnan(waist.x):
-            waist.x = 0
-        if math.isnan(waist.y):
-            waist.y = 0
+        if len(data_in[0]) < 1 or math.isnan(float(data_in[0][0])):
+            return [False, beam, 'missing mandatory beam wavelength parameter']
+        beam.wavelength = float(data_in[0][0]) * 1E-6
+        if beam.wavelength <= 0:
+            return [False, beam, 'beam wavelength must be greater than 0']
+        waist = data.XYData()
+        if len(data_in[1]) > 0 and not math.isnan(float(data_in[1][0])):
+            waist.x = float(data_in[1][0])
+        if len(data_in[2]) > 0 and not math.isnan(float(data_in[2][0])):
+            waist.y = float(data_in[2][0])
         if waist.x < 0 or waist.y < 0:
             return [False, beam, 'beam waist must be greater than 0']
         beam.waist = waist
-        beam.wavelength = float(data_in[6]) * 1E-6
-        if math.isnan(beam.wavelength):
-            return [False, beam, 'missing mandatory beam wavelength parameter']
-        if beam.wavelength <= 0:
-            return [False, beam, 'beam wavelength must be greater than 0']
-        if len(data_in) < 8:
+        aperture = data.XYData()
+        if len(data_in[1]) > 1 and not math.isnan(float(data_in[1][1])):
+            aperture.x = float(data_in[1][1])
+        if len(data_in[2]) > 1 and not math.isnan(float(data_in[2][1])):
+            aperture.y = float(data_in[2][1])
+        if aperture.x < 0 or aperture.y < 0:
+            return [False, beam, 'beam aperture must be greater than 0']
+        beam.waist = waist
+        angle = data.XYData()
+        if len(data_in[1]) > 2 and not math.isnan(float(data_in[1][2])):
+            angle.x = float(data_in[1][2]) * 1E-3
+        if len(data_in[2]) > 2 and not math.isnan(float(data_in[2][2])):
+            angle.y = float(data_in[2][2]) * 1E-3
+        beam.angle = angle
+        curvature = data.XYData()
+        if len(data_in[1]) > 3 and not math.isnan(float(data_in[1][3])):
+            curvature.x = float(data_in[1][3])
+        if len(data_in[2]) > 3 and not math.isnan(float(data_in[2][3])):
+            curvature.y = float(data_in[2][3])
+        beam.curvature = curvature
+        aberration = data.XYDataString()
+        if len(data_in[1]) > 4 and (type(data_in[1][4]) == type('string')):
+            aberration.x = str(data_in[1][4])
+        if len(data_in[2]) > 4 and (type(data_in[2][4]) == type('string')):
+            aberration.y = str(data_in[2][4])
+        beam.aberration = aberration
+        if (aberration.x != '' and aperture.x != 0) or (aberration.x != '' and aperture.y != 0):
+            return [True, beam, 'aberration function is ignored since beam aperture is not set']
+        if len(data_in[0]) < 2:
             return [True, beam, '']
-        beam.band = float(data_in[7]) / 100
-        if math.isnan(beam.band):
-            beam.band = 0
-        if len(data_in) < 8:
+        if not math.isnan(data_in[0][1]):
+            beam.band = float(data_in[0][1]) / 100
+        if beam.band < 0:
+            return [False, beam, 'beam band must be greater than 0']
+        if len(data_in[0]) < 3:
             return [True, beam, '']
-        beam.intensity = float(data_in[8])
-        if math.isnan(beam.intensity):
-            beam.intensity = 1
+        if not math.isnan(data_in[0][2]):
+            beam.intensity = float(data_in[0][2])
+        if beam.intensity < 0:
+            return [False, beam, 'beam intensity must be greater than 0']
         return [True, beam, '']
 
     def parseGrating(data_in, wavelength):
@@ -77,25 +87,23 @@ def createStructures(filename):
             return [False, grating, 'missing mandatory data column for phase grating']
         if len(data_in) < 4:
             return [True, grating, '']
-        grating.aperture = float(data_in[3])
-        if math.isnan(grating.aperture):
-            grating.aperture = 0
-        if grating.aperture < 0:
-            return [False, grating, 'grating aperture must be greater than 0']
-        if len(data_in) < 5:
-            return [True, grating, '']
-        grating.depth = float(data_in[4])
+        grating.depth = float(data_in[3])
         if math.isnan(grating.depth):
             grating.depth = 0
-        if len(data_in) < 6:
+        if len(data_in) < 5:
             return [True, grating, '']
-        grating.index = [float(data_in[5]), 0]
+        grating.index = [float(data_in[4]), 0]
         if math.isnan(grating.index[0]):
             grating.index = [0, 0]
         if wavelength == 0 and 'phase' in grating.slit:
             return [False, grating, 'grating phase depth calculation is impossible with zero wavelength']
         grating.phase_depth = 2 * math.pi * ((grating.index[0] - 1) * grating.depth / wavelength -
                                              round((grating.index[0] - 1) * grating.depth / wavelength))
+        if len(data_in) < 6:
+            return [True, grating, '']
+        grating.index[1] = float(data_in[5])
+        if math.isnan(grating.index[1]):
+            grating.index[1] = 0
         return [True, grating, '']
 
     def parsePsd(data_in):
@@ -144,20 +152,24 @@ def createStructures(filename):
         message = f'Line {idx + 1} '
         blank_line = '\n'.ljust(len(message) + len('\n'))
         [b_ok, beam, message_tmp] = parseBeam(beam)
-        if not b_ok:
+        b_warn = False
+        if not b_ok or (b_ok and message_tmp != ''):
             message += message_tmp
+            b_warn = True
         [g_ok, grating, message_tmp] = parseGrating(grating, beam.wavelength)
         if not g_ok:
-            if not b_ok:
+            if not b_ok or b_warn:
                 message += blank_line
             message += message_tmp
         [p_ok, psd, message_tmp] = parsePsd(psd)
         if not p_ok:
-            if not g_ok or not b_ok:
+            if not g_ok or not b_ok or b_warn:
                 message += blank_line
             message += message_tmp
         if not g_ok or not b_ok or not p_ok:
             print(data.text.RED + '    ' + message.replace('\n', '\n    ') + data.text.END)
+        elif b_warn:
+            print(data.text.BLUE + '    ' + message.replace('\n', '\n    ') + data.text.END)
         else:
             message = ''
         add = parseAdd(add)
@@ -183,17 +195,30 @@ def createStructures(filename):
             psd.values.shape[0] != grating.values.shape[0]):
         return [False, 'File: datafile structures are different. Please check input data.']
     data_len = grating.values.shape[0]
-    add = []
     if 'Add' in xls.sheet_names:
         add = pd.read_excel(filename, sheet_name='Add', skiprows=0)
-        if add.empty or add.values.shape[0] != data_len:
-            return [False, 'File: datafile structures are different. Please check input data.']
+    else:
+        add = []
+    if 'Beam.X' in xls.sheet_names:
+        beam_x = pd.read_excel(filename, sheet_name='Beam.X', skiprows=0)
+    else:
+        beam_x = []
+    if 'Beam.Y' in xls.sheet_names:
+        beam_y = pd.read_excel(filename, sheet_name='Beam.Y', skiprows=0)
+    else:
+        beam_y = []
+    if (not len(add) == 0 and add.values.shape[0] != data_len) or \
+            (not len(beam_x) == 0 and beam_x.values.shape[0] != data_len) or \
+            (not len(beam_y) == 0 and beam_y.values.shape[0] != data_len):
+        return [False, 'File: datafile structures are different. Please check input data.']
     ret_val = {}
     for idx in range(data_len):
-        if 'Add' in xls.sheet_names:
-            ret_val[idx] = parseDataLine(grating.values[idx], beam.values[idx], psd.values[idx], add.values[idx], idx)
-        else:
-            ret_val[idx] = parseDataLine(grating.values[idx], beam.values[idx], psd.values[idx], add, idx)
+        ret_val[idx] = parseDataLine(grating.values[idx],
+                                     [beam.values[idx],
+                                      beam_x.values[idx] if not len(beam_x) == 0 else [],
+                                      beam_y.values[idx] if not len(beam_y) == 0 else []],
+                                     psd.values[idx],
+                                     add.values[idx] if not len(add) == 0 else [], idx)
     if 'Dependencies' in xls.sheet_names:
         dependencies = pd.read_excel(filename, sheet_name='Dependencies', skiprows=0).to_string()
         xls.close()

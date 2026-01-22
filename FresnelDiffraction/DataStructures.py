@@ -2,15 +2,18 @@ import numpy as np
 
 
 class Beam:
-    intensity = None
+    intensity = 0
     waist = None
     curvature = None
     angle = None
     wavelength = None
+    aperture = None
+    band = 0
+    aberration = None
+    coefficients = None
 
 
 class Grating:
-    aperture = None
     slit = "1D, square"
     period = None
     depth = None
@@ -34,6 +37,16 @@ class Distribution:
 class Distribution2D:
     x = None
     y = None
+
+
+class XYData:
+    x = 0
+    y = 0
+
+
+class XYDataString:
+    x = ''
+    y = ''
 
 
 class Psd:
