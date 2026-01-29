@@ -24,6 +24,11 @@ def images(result):
                                            result.data[idx].grating.coefficients.y.n,
                                            result.data[idx].grating.coefficients.y.sn, 'y', result.io.filedir,
                                            f'grating_spectrum_{idx}.png')
+                    DisplayData.twoSpectra(result.data[idx].beam.coefficients.x.n,
+                                           result.data[idx].beam.coefficients.x.sn, 'x',
+                                           result.data[idx].beam.coefficients.y.n,
+                                           result.data[idx].beam.coefficients.y.sn, 'y', result.io.filedir,
+                                           f'beam_spectrum_{idx}.png')
                     DisplayData.intensities(result.data[idx].psd.image.x.coordinate,
                                             result.data[idx].psd.image.x.intensity, 'x',
                                             result.data[idx].psd.image.y.coordinate,

@@ -16,9 +16,9 @@ def createStructures(filename):
             return [False, beam, 'beam wavelength must be greater than 0']
         waist = data.XYData()
         if len(data_in[1]) > 0 and not math.isnan(float(data_in[1][0])):
-            waist.x = float(data_in[1][0])
+            waist.x = float(data_in[1][0]) * 2
         if len(data_in[2]) > 0 and not math.isnan(float(data_in[2][0])):
-            waist.y = float(data_in[2][0])
+            waist.y = float(data_in[2][0]) * 2
         if waist.x < 0 or waist.y < 0:
             return [False, beam, 'beam waist must be greater than 0']
         beam.waist = waist
@@ -29,7 +29,7 @@ def createStructures(filename):
             aperture.y = float(data_in[2][1])
         if aperture.x < 0 or aperture.y < 0:
             return [False, beam, 'beam aperture must be greater than 0']
-        beam.waist = waist
+        beam.aperture = aperture
         angle = data.XYData()
         if len(data_in[1]) > 2 and not math.isnan(float(data_in[1][2])):
             angle.x = float(data_in[1][2]) * 1E-3
@@ -48,7 +48,7 @@ def createStructures(filename):
         if len(data_in[2]) > 4 and (type(data_in[2][4]) == type('string')):
             aberration.y = str(data_in[2][4])
         beam.aberration = aberration
-        if (aberration.x != '' and aperture.x != 0) or (aberration.x != '' and aperture.y != 0):
+        if (aberration.x != '' and aperture.x == 0) or (aberration.y != '' and aperture.y == 0):
             return [True, beam, 'aberration function is ignored since beam aperture is not set']
         if len(data_in[0]) < 2:
             return [True, beam, '']
@@ -94,7 +94,7 @@ def createStructures(filename):
             return [True, grating, '']
         grating.index = [float(data_in[4]), 0]
         if math.isnan(grating.index[0]):
-            grating.index = [0, 0]
+            grating.index = [1, 0]
         if wavelength == 0 and 'phase' in grating.slit:
             return [False, grating, 'grating phase depth calculation is impossible with zero wavelength']
         grating.phase_depth = 2 * math.pi * ((grating.index[0] - 1) * grating.depth / wavelength -
