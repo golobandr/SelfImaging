@@ -161,20 +161,24 @@ def outputDistribution(grating, beam, psd):
     pts = round(psd.aperture // psd.step) + 1
     psd.aperture = psd.step * pts
     x = np.linspace(-psd.aperture / 2, psd.aperture / 2, round(pts * psd.div_factor))
-    if psd.distance > 0:
-        intensity_x = diffraction1D(grating.coefficients.x.n, grating.coefficients.x.cn,
-                                    beam.coefficients.x.n, beam.coefficients.x.cn,
-                                    beam.wavelength, beam.angle.x, beam.waist.x, beam.curvature.x, psd.distance, x)
-        intensity_y = diffraction1D(grating.coefficients.y.n, grating.coefficients.y.cn,
-                                    beam.coefficients.y.n, beam.coefficients.y.cn,
-                                    beam.wavelength, beam.angle.y, beam.waist.y, beam.curvature.y, psd.distance, x)
+    if beam.band == 0:
+        if psd.distance > 0:
+            intensity_x = diffraction1D(grating.coefficients.x.n, grating.coefficients.x.cn,
+                                        beam.coefficients.x.n, beam.coefficients.x.cn,
+                                        beam.wavelength, beam.angle.x, beam.waist.x, beam.curvature.x, psd.distance, x)
+            intensity_y = diffraction1D(grating.coefficients.y.n, grating.coefficients.y.cn,
+                                        beam.coefficients.y.n, beam.coefficients.y.cn,
+                                        beam.wavelength, beam.angle.y, beam.waist.y, beam.curvature.y, psd.distance, x)
+        else:
+            intensity_x = diffraction1DAtZeroDistance(grating.coefficients.x.n, grating.coefficients.x.cn,
+                                                      beam.coefficients.x.n, beam.coefficients.x.cn,
+                                                      beam.waist.x, x)
+            intensity_y = diffraction1DAtZeroDistance(grating.coefficients.y.n, grating.coefficients.y.cn,
+                                                      beam.coefficients.y.n, beam.coefficients.y.cn,
+                                                      beam.waist.y, x)
     else:
-        intensity_x = diffraction1DAtZeroDistance(grating.coefficients.x.n, grating.coefficients.x.cn,
-                                                  beam.coefficients.x.n, beam.coefficients.x.cn,
-                                                  beam.waist.x, x)
-        intensity_y = diffraction1DAtZeroDistance(grating.coefficients.y.n, grating.coefficients.y.cn,
-                                                  beam.coefficients.y.n, beam.coefficients.y.cn,
-                                                  beam.waist.y, x)
+        intensity_x = np.zeros(len(x))
+        intensity_y = np.zeros(len(x))
     x = np.linspace(-psd.aperture / 2, psd.aperture / 2, pts)
     intensity = data.Distribution2D()
     intensity.x = averagePixel(intensity_x, x, round(psd.div_factor))

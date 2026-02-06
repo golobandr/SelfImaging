@@ -47,22 +47,27 @@ def createStructures(filename):
             aberration.x = str(data_in[1][4])
         if len(data_in[2]) > 4 and (type(data_in[2][4]) == type('string')):
             aberration.y = str(data_in[2][4])
-        beam.aberration = aberration
+        message = '' # will be ignored if error apper
         if (aberration.x != '' and aperture.x == 0) or (aberration.y != '' and aperture.y == 0):
-            return [True, beam, 'aberration function is ignored since beam aperture is not set']
+            message = 'aberration function is ignored since beam aperture is not set'
+            if aberration.x != '' and aperture.x == 0:
+                aberration.x = ''
+            if aberration.y != '' and aperture.y == 0:
+                aberration.y = ''
+        beam.aberration = aberration
         if len(data_in[0]) < 2:
-            return [True, beam, '']
+            return [True, beam, message]
         if not math.isnan(data_in[0][1]):
             beam.band = float(data_in[0][1]) / 100
         if beam.band < 0:
             return [False, beam, 'beam band must be greater than 0']
         if len(data_in[0]) < 3:
-            return [True, beam, '']
+            return [True, beam, message]
         if not math.isnan(data_in[0][2]):
             beam.intensity = float(data_in[0][2])
         if beam.intensity < 0:
             return [False, beam, 'beam intensity must be greater than 0']
-        return [True, beam, '']
+        return [True, beam, message]
 
     def parseGrating(data_in, wavelength):
         grating = data.Grating()
