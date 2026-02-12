@@ -12,9 +12,9 @@ def beamCoefficients(beam, aperture, accuracy):
         if beam_a != 0:
             width = width_init
             if 1 / beam_a > a:
-                period = 2 * 1 / beam_a
+                period = 20 / beam_a
             else:
-                period = a
+                period = 20 * a
             coordinate = np.linspace(-period / 2, period / 2, 2 * width + 2)
             coordinate = coordinate[:-1]
             profile = np.zeros(2 * width + 1)
