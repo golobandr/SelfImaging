@@ -51,20 +51,36 @@ def dependencies(result):
         DisplayData.calculationError(i_error, n_error, 1E-4, result.io.filedir, 'error_distribution.png')
         dependencies['error'] = {'n': n_error,
                                  'data': i_error}
-    if result.is_ok and ('distance' in result.dependencies.lower() or 'duty factor' in result.dependencies.lower()) \
-            and len(result.data) > 2:
+    if result.is_ok and ('distance' in result.dependencies.lower() or
+                         'duty factor' in result.dependencies.lower() or
+                         'curvature' in result.dependencies.lower()) and len(result.data) > 2:
         z = np.zeros(len(result.data))
         x = result.data[0].psd.image.x.coordinate
-        image = np.zeros((len(x), len(result.data)))
+        image_x = np.zeros((len(x), len(result.data)))
+        image_y = np.zeros((len(x), len(result.data)))
         for idx in range(len(result.data)):
             if 'distance' in result.dependencies.lower():
                 z[idx] = result.data[idx].psd.distance
             elif 'duty factor' in result.dependencies.lower():
                 z[idx] = result.data[idx].grating.duty_factor
-            image[:, idx] = result.data[idx].psd.image.x.intensity
-        DisplayData.image2D(image, z, x, 'Talbot carpet', result.io.filedir, 'carpet.png',
-                            'carpet_scale.png', 'carpet_gray.bmp', True, True)
+            elif 'x curvature' in result.dependencies.lower():
+                z[idx] = result.data[idx].beam.curvature.x
+            elif 'y curvature' in result.dependencies.lower():
+                z[idx] = result.data[idx].beam.curvature.x
+            image_x[:, idx] = result.data[idx].psd.image.x.intensity
+            image_y[:, idx] = result.data[idx].psd.image.y.intensity
+
+        DisplayData.image2D(image_x, z, x, 'Talbot carpet', result.io.filedir, 'carpet_x.png',
+                            'carpet_scale_x.png', 'carpet_gray_x.bmp', True, True)
+        DisplayData.image2D(image_y, z, x, 'Talbot carpet', result.io.filedir, 'carpet_y.png',
+                            'carpet_scale_y.png', 'carpet_gray_y.bmp', True, True)
         dependencies['distance'] = {'z': z,
                                     'x': x,
-                                    'image': image}
+                                    'image_x': image_x,
+                                    'image_y': image_y}
     return dependencies
+
+
+def convertScale(image):
+    image = np.log10(image / image.max() * 1E5 + 1)
+    return image / image.max()

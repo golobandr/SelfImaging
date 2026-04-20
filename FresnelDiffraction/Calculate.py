@@ -15,8 +15,7 @@ def beamCoefficients(beam, aperture, accuracy):
                 period = 20 / beam_a
             else:
                 period = 20 * a
-            coordinate = np.linspace(-period / 2, period / 2, 2 * width + 2)
-            coordinate = coordinate[:-1]
+            coordinate = np.linspace(-period / 2, period / 2, num=2 * width + 1, endpoint=False)
             profile = np.zeros(2 * width + 1)
             for i in range(len(profile)):
                 profile[i] = 0 if abs(coordinate[i]) > 1 / (2 * beam_a) else 1
@@ -90,8 +89,7 @@ def gratingCoefficients(grating, accuracy):
     def fourierComplexCoefficients(grating):
         if 'cos' in grating.slit:
             width = width_init
-            x = np.linspace(-grating.period / 2, grating.period / 2, 2 * width + 2)
-            x = x[:-1]
+            x = np.linspace(-grating.period / 2, grating.period / 2, num=2 * width + 1, endpoint=False)
             phase = grating.phase_depth * np.cos(2 * np.pi / grating.period * x)
             pit_re = np.cos(phase)
             pit_im = np.sin(phase)
@@ -123,10 +121,6 @@ def gratingCoefficients(grating, accuracy):
 
 
 def outputDistribution(grating, beam, psd):
-    def normalIntensity(u):
-        intensity = np.abs(u) ** 2
-        return intensity
-
     def diffraction1DAtZeroDistance(n, cn, m, am, waist, x):
         u = np.zeros(len(x), dtype=complex)
         y = 1j * 2 * math.pi * x
@@ -134,8 +128,8 @@ def outputDistribution(grating, beam, psd):
             for j in range(len(m)):
                 for k in range(len(n)):
                     u[i] += cn[k] * am[j] * np.exp(-y[i] * (n[k] + m[j]))
-        u = u * np.exp(-(x * waist) ** 2)
-        return normalIntensity(u)
+        u = u * np.exp(-(x * waist) ** 2 / 2)
+        return np.abs(u) ** 2
 
     def averagePixel(intensity, x, sd):
         distribution = data.Distribution()
@@ -156,13 +150,13 @@ def outputDistribution(grating, beam, psd):
                 for k in range(len(n)):
                     exp_a = np.exp(-a * (x[i] + n[k] + m[j]) ** 2)
                     u[i] += exp_a * cn[k] * am[j]
-        return normalIntensity(u)
+        return np.abs(u) ** 2
 
     pts = round(psd.aperture // psd.step) + 1
     psd.aperture = psd.step * pts
     x = np.linspace(-psd.aperture / 2, psd.aperture / 2, round(pts * psd.div_factor))
-    if beam.band == 0:
-        if psd.distance > 0:
+    if psd.distance > 0:
+        if beam.band == 0:
             intensity_x = diffraction1D(grating.coefficients.x.n, grating.coefficients.x.cn,
                                         beam.coefficients.x.n, beam.coefficients.x.cn,
                                         beam.wavelength, beam.angle.x, beam.waist.x, beam.curvature.x, psd.distance, x)
@@ -170,15 +164,37 @@ def outputDistribution(grating, beam, psd):
                                         beam.coefficients.y.n, beam.coefficients.y.cn,
                                         beam.wavelength, beam.angle.y, beam.waist.y, beam.curvature.y, psd.distance, x)
         else:
-            intensity_x = diffraction1DAtZeroDistance(grating.coefficients.x.n, grating.coefficients.x.cn,
-                                                      beam.coefficients.x.n, beam.coefficients.x.cn,
-                                                      beam.waist.x, x)
-            intensity_y = diffraction1DAtZeroDistance(grating.coefficients.y.n, grating.coefficients.y.cn,
-                                                      beam.coefficients.y.n, beam.coefficients.y.cn,
-                                                      beam.waist.y, x)
+            intensity_x = np.zeros(len(x))
+            intensity_y = np.zeros(len(x))
+            delta_wl = beam.wavelength / 100
+            wls = np.arange(beam.wavelength / (1 + 3 * beam.band), beam.wavelength / (1 - 3 * beam.band), delta_wl)
+            wls = np.append(wls, wls[len(wls) - 1] + delta_wl)
+            for wl in wls:
+                s_wl = np.exp(-((wl - beam.wavelength) / (wl * beam.band)) ** 2) * \
+                       np.sqrt(2 * math.pi / complex(2 * math.pi * (1 + psd.distance * beam.curvature.x),
+                                                     wl * psd.distance * beam.waist ** 2))
+                intensity_tmp = diffraction1D(grating.coefficients.x.n, grating.coefficients.x.cn,
+                                              beam.coefficients.x.n, beam.coefficients.x.cn,
+                                              beam.wavelength, beam.angle.x, beam.waist.x, beam.curvature.x,
+                                              psd.distance, x)
+                intensity_x += s_wl * intensity_tmp
+                s_wl = np.exp(-((wl - beam.wavelength) / (wl * beam.band)) ** 2) * \
+                       np.sqrt(2 * math.pi / complex(2 * math.pi * (1 + psd.distance * beam.curvature.y),
+                                                     wl * psd.distance * beam.waist ** 2))
+                intensity_tmp = diffraction1D(grating.coefficients.y.n, grating.coefficients.y.cn,
+                                              beam.coefficients.y.n, beam.coefficients.y.cn,
+                                              beam.wavelength, beam.angle.y, beam.waist.x, beam.curvature.y,
+                                              psd.distance, x)
+                intensity_y += s_wl * intensity_tmp
+
     else:
-        intensity_x = np.zeros(len(x))
-        intensity_y = np.zeros(len(x))
+        intensity_x = diffraction1DAtZeroDistance(grating.coefficients.x.n, grating.coefficients.x.cn,
+                                                  beam.coefficients.x.n, beam.coefficients.x.cn,
+                                                  beam.waist.x, x)
+        intensity_y = diffraction1DAtZeroDistance(grating.coefficients.y.n, grating.coefficients.y.cn,
+                                                  beam.coefficients.y.n, beam.coefficients.y.cn,
+                                                  beam.waist.y, x)
+
     x = np.linspace(-psd.aperture / 2, psd.aperture / 2, pts)
     intensity = data.Distribution2D()
     intensity.x = averagePixel(intensity_x, x, round(psd.div_factor))

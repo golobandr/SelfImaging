@@ -79,6 +79,7 @@ class OutputData:
     data = None
     io = None
     dependencies = None
+    copy_grating = False
 
 
 class OutputDataLine:

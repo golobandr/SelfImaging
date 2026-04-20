@@ -47,7 +47,7 @@ def createStructures(filename):
             aberration.x = str(data_in[1][4])
         if len(data_in[2]) > 4 and (type(data_in[2][4]) == type('string')):
             aberration.y = str(data_in[2][4])
-        message = '' # will be ignored if error apper
+        message = ''  # will be ignored if error apper
         if (aberration.x != '' and aperture.x == 0) or (aberration.y != '' and aperture.y == 0):
             message = 'aberration function is ignored since beam aperture is not set'
             if aberration.x != '' and aperture.x == 0:
@@ -88,7 +88,7 @@ def createStructures(filename):
             grating.slit = grating.slit.replace('square', 'delta')
         if 'square' in grating.slit and grating.duty_factor == 0:
             grating.slit.replace('square', 'delta')
-        if len(data_in) < 6 and 'phase' in grating.slit:
+        if len(data_in) < 5 and 'phase' in grating.slit:
             return [False, grating, 'missing mandatory data column for phase grating']
         if len(data_in) < 4:
             return [True, grating, '']
@@ -217,6 +217,7 @@ def createStructures(filename):
             (not len(beam_y) == 0 and beam_y.values.shape[0] != data_len):
         return [False, 'File: datafile structures are different. Please check input data.']
     ret_val = {}
+    copy_grating = True
     for idx in range(data_len):
         ret_val[idx] = parseDataLine(grating.values[idx],
                                      [beam.values[idx],
@@ -224,13 +225,18 @@ def createStructures(filename):
                                       beam_y.values[idx] if not len(beam_y) == 0 else []],
                                      psd.values[idx],
                                      add.values[idx] if not len(add) == 0 else [], idx)
+        if idx > 0 and (
+                ('phase' in grating.values[idx][0] and list(grating.values[idx]) != list(grating.values[idx - 1])) or
+                ('phase' not in grating.values[idx][0] and
+                 list(grating.values[idx])[0:2] != list(grating.values[idx - 1])[0:2])):
+            copy_grating = False
     if 'Dependencies' in xls.sheet_names:
         dependencies = pd.read_excel(filename, sheet_name='Dependencies', skiprows=0).to_string()
         xls.close()
-        return [True, [ret_val, dependencies]]
+        return [True, [ret_val, dependencies, copy_grating]]
     else:
         xls.close()
-        return [True, [ret_val, '']]
+        return [True, [ret_val, '', copy_grating]]
 
 
 def fromFile(wd, filename):
@@ -254,6 +260,7 @@ def fromFile(wd, filename):
             print('    ' + data.text.RED + rd.message + data.text.END)
         rd.data = retval[0]
         rd.dependencies = retval[1]
+        rd.copy_grating = retval[2]
     else:
         is_ok = False
         rd.is_ok = False

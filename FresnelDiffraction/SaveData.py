@@ -1,3 +1,4 @@
+import numpy as np
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment
 
@@ -31,20 +32,43 @@ def fromDatLine(result):
     for idx in range(len(result.data)):
         ws.append([printoutCellData(result.data[idx].is_ok), result.data[idx].start,
                    result.data[idx].end, result.data[idx].message])
+    if result.is_ok and 'distance' in result.dependencies:
+        col_names = ['', 'z, mm']
+        for idx in range(len(result.data)):
+            col_names.append(result.data[idx].psd.distance)
+        if 'Distance' in wb.sheetnames:
+            ws = wb.active
+        else:
+            ws = wb.create_sheet('Distance')
+        ws.append(col_names)
+        ws.append(['x, mm'])
+        for i in range(len(result.data[0].psd.image.x.coordinate)):
+            data_to_save = [result.data[0].psd.image.x.coordinate[i], '']
+            for idx in range(len(result.data)):
+                data_to_save.append(result.data[idx].psd.image.x.intensity[i])
+            ws.append(data_to_save)
+
     for idx in range(len(result.data)):
         if result.data[idx].is_ok and result.data[idx].add.save:
             if result.data[idx].add.debug:
                 col_names = ['x frequencies', 'x spectrum, urb.un.', 'y frequencies', 'y spectrum, urb.un.',
-                             'x', 'x intensities, urb.un.', 'y', 'y intensities, urb.un.', ]
+                             'x, mm', 'x intensities, urb.un.', 'y, mm', 'y intensities, urb.un.', ]
                 col_widths = [15, 21, 15, 21, 12, 25, 12, 25]
                 rows = max([len(result.data[idx].grating.coefficients.x.n),
                             len(result.data[idx].grating.coefficients.y.n),
                             len(result.data[idx].psd.image.x.coordinate),
                             len(result.data[idx].psd.image.y.coordinate)])
             else:
-                col_names = ['x', 'x intensities, urb.un.', 'y', 'y intensities, urb.un.', ]
-                col_widths = [12, 25, 12, 25]
-                rows = max([len(result.data[idx].psd.image.x.coordinate), len(result.data[idx].psd.image.y.coordinate)])
+                if '1D' in result.data[idx].grating.slit:
+                    col_names = ['x', 'x intensities, urb.un.']
+                    col_widths = [12, 25]
+                    rows = max(
+                        [len(result.data[idx].psd.image.x.coordinate), len(result.data[idx].psd.image.y.coordinate)])
+                else:
+                    col_names = ['x', 'x intensities, urb.un.', 'y', 'y intensities, urb.un.', ]
+                    col_widths = [12, 25, 12, 25]
+                    rows = max(
+                        [len(result.data[idx].psd.image.x.coordinate), len(result.data[idx].psd.image.y.coordinate)])
             ws = setSheetNames(len(col_names), col_names, col_widths, wb, f'Line #{idx}')
             for i in range(rows):
                 data_to_save = []
@@ -67,7 +91,7 @@ def fromDatLine(result):
                 else:
                     data_to_save.append('')
                     data_to_save.append('')
-                if len(result.data[idx].psd.image.y.coordinate) > i:
+                if len(result.data[idx].psd.image.y.coordinate) > i or not '1D' in result.data[idx].grating.slit:
                     data_to_save.append(result.data[idx].psd.image.y.coordinate[i])
                     data_to_save.append(result.data[idx].psd.image.y.intensity[i])
                 else:
@@ -90,4 +114,3 @@ def forDependencies(result):
         to_save = True
     if to_save:
         wb.save(result.io.outputfile)
-
