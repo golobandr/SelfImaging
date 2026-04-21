@@ -218,6 +218,7 @@ def createStructures(filename):
         return [False, 'File: datafile structures are different. Please check input data.']
     ret_val = {}
     copy_grating = True
+    copy_beam = True
     for idx in range(data_len):
         ret_val[idx] = parseDataLine(grating.values[idx],
                                      [beam.values[idx],
@@ -225,18 +226,30 @@ def createStructures(filename):
                                       beam_y.values[idx] if not len(beam_y) == 0 else []],
                                      psd.values[idx],
                                      add.values[idx] if not len(add) == 0 else [], idx)
-        if idx > 0 and (
-                ('phase' in grating.values[idx][0] and list(grating.values[idx]) != list(grating.values[idx - 1])) or
-                ('phase' not in grating.values[idx][0] and
-                 list(grating.values[idx])[0:2] != list(grating.values[idx - 1])[0:2])):
-            copy_grating = False
+        if idx > 0 and copy_grating:
+            if 'phase' in grating.values[idx][0]:
+                if list(grating.values[idx]) != list(grating.values[idx - 1]) or \
+                        list(beam.values[idx])[0:2] != list(beam.values[idx - 1])[0:2]:
+                    copy_grating = False
+            elif list(grating.values[idx])[0:3] != list(grating.values[idx - 1])[0:3]:
+                copy_grating = False
+        if idx > 0 and copy_beam and len(beam_x) != 0 or len(beam_y) != 0:
+            if psd.values[idx][1] != psd.values[idx - 1][1]:
+                copy_beam = False
+            else:
+                if len(beam_x) >= 2 and beam_x.values[idx][1] != beam_x.values[idx - 1][1]:
+                    copy_beam = False
+                if len(beam_x) >= 5 and beam_x.values[idx][4] != beam_x.values[idx - 1][4]:
+                    copy_beam = False
+                if len(beam_y) >= 2 and beam_y.values[idx][1] != beam_y.values[idx - 1][1]:
+                    copy_beam = False
+                if len(beam_y) >= 5 and beam_y.values[idx][4] != beam_y.values[idx - 1][4]:
+                    copy_beam = False
+    dependencies = ''
     if 'Dependencies' in xls.sheet_names:
         dependencies = pd.read_excel(filename, sheet_name='Dependencies', skiprows=0).to_string()
-        xls.close()
-        return [True, [ret_val, dependencies, copy_grating]]
-    else:
-        xls.close()
-        return [True, [ret_val, '', copy_grating]]
+    xls.close()
+    return [True, [ret_val, dependencies, copy_grating, copy_beam]]
 
 
 def fromFile(wd, filename):
@@ -246,7 +259,7 @@ def fromFile(wd, filename):
     io.filedir = os.path.join(wd, os.path.splitext(os.path.basename(filename))[0])
     io.workdir = wd
     io.filename = os.path.basename(filename)
-    io.outputfile = os.path.join(io.filedir, io.filename)
+    io.outputfile = os.path.join(str(io.filedir), io.filename)
     if not os.path.isdir(io.filedir):
         os.mkdir(io.filedir)
     dest = shutil.copy(filename, io.outputfile)
@@ -261,6 +274,7 @@ def fromFile(wd, filename):
         rd.data = retval[0]
         rd.dependencies = retval[1]
         rd.copy_grating = retval[2]
+        rd.copy_beam = retval[3]
     else:
         is_ok = False
         rd.is_ok = False

@@ -80,6 +80,7 @@ class OutputData:
     io = None
     dependencies = None
     copy_grating = False
+    copy_beam = False
 
 
 class OutputDataLine:
