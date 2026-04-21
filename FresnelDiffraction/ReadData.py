@@ -58,9 +58,9 @@ def createStructures(filename):
         if len(data_in[0]) < 2:
             return [True, beam, message]
         if not math.isnan(data_in[0][1]):
-            beam.band = float(data_in[0][1]) / 100
-        if beam.band < 0:
-            return [False, beam, 'beam band must be greater than 0']
+            beam.bandwidth = float(data_in[0][1]) / 100
+        if beam.bandwidth < 0:
+            return [False, beam, 'beam bandwidth must be greater than 0']
         if len(data_in[0]) < 3:
             return [True, beam, message]
         if not math.isnan(data_in[0][2]):
@@ -219,6 +219,7 @@ def createStructures(filename):
     ret_val = {}
     copy_grating = True
     copy_beam = True
+    copy_beam_band = True
     for idx in range(data_len):
         ret_val[idx] = parseDataLine(grating.values[idx],
                                      [beam.values[idx],
@@ -233,7 +234,7 @@ def createStructures(filename):
                     copy_grating = False
             elif list(grating.values[idx])[0:3] != list(grating.values[idx - 1])[0:3]:
                 copy_grating = False
-        if idx > 0 and copy_beam and len(beam_x) != 0 or len(beam_y) != 0:
+        if idx > 0 and copy_beam and (len(beam_x) != 0 or len(beam_y) != 0):
             if psd.values[idx][1] != psd.values[idx - 1][1]:
                 copy_beam = False
             else:
@@ -245,11 +246,15 @@ def createStructures(filename):
                     copy_beam = False
                 if len(beam_y) >= 5 and beam_y.values[idx][4] != beam_y.values[idx - 1][4]:
                     copy_beam = False
+        if idx > 0 and copy_beam_band and beam.values[idx][1] != 0 and \
+                beam.values[idx][1] != beam.values[idx - 1][1]:
+            copy_beam_band = False
+
     dependencies = ''
     if 'Dependencies' in xls.sheet_names:
         dependencies = pd.read_excel(filename, sheet_name='Dependencies', skiprows=0).to_string()
     xls.close()
-    return [True, [ret_val, dependencies, copy_grating, copy_beam]]
+    return [True, [ret_val, dependencies, copy_grating, copy_beam, copy_beam_band]]
 
 
 def fromFile(wd, filename):
@@ -275,6 +280,7 @@ def fromFile(wd, filename):
         rd.dependencies = retval[1]
         rd.copy_grating = retval[2]
         rd.copy_beam = retval[3]
+        rd.copy_beam_band = retval[4]
     else:
         is_ok = False
         rd.is_ok = False

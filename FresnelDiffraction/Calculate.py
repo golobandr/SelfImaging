@@ -6,6 +6,22 @@ import statistics
 width_init = 300
 
 
+def beambandSpectrumCoefficients(beam):
+    beam_band = data.Spectrum()
+    if beam.bandwidth == 0:
+        beam_band.wavelength = beam.wavelength
+        beam_band.intensity = 1
+    else:
+        delta_wl = beam.wavelength / 100
+        wls_less = np.arange(beam.wavelength, beam.wavelength / (1 + 3 * beam.bandwidth) - delta_wl, -delta_wl)
+        wls_more = np.arange(beam.wavelength, beam.wavelength / (1 - 3 * beam.bandwidth) + delta_wl, delta_wl)
+        wls = np.sort(np.array(list(set(np.append(wls_less, wls_more)))))
+        beam_band.wavelength = wls
+        beam_band.intensity = np.exp(-((wls - beam.wavelength) / (wls * beam.bandwidth)) ** 2)
+        beam_band.intensity = beam_band.intensity / sum(beam_band.intensity)
+    return beam_band
+
+
 def beamCoefficients(beam, aperture, accuracy):
     def setCoef(beam_a, a, function, coord_letter):
         coef = data.Coefficients()
@@ -156,7 +172,7 @@ def outputDistribution(grating, beam, psd):
     psd.aperture = psd.step * pts
     x = np.linspace(-psd.aperture / 2, psd.aperture / 2, round(pts * psd.div_factor))
     if psd.distance > 0:
-        if beam.band == 0:
+        if beam.bandwidth == 0:
             intensity_x = diffraction1D(grating.coefficients.x.n, grating.coefficients.x.cn,
                                         beam.coefficients.x.n, beam.coefficients.x.cn,
                                         beam.wavelength, beam.angle.x, beam.waist.x, beam.curvature.x, psd.distance, x)
@@ -166,26 +182,25 @@ def outputDistribution(grating, beam, psd):
         else:
             intensity_x = np.zeros(len(x))
             intensity_y = np.zeros(len(x))
-            delta_wl = beam.wavelength / 100
-            wls = np.arange(beam.wavelength / (1 + 3 * beam.band), beam.wavelength / (1 - 3 * beam.band), delta_wl)
-            wls = np.append(wls, wls[len(wls) - 1] + delta_wl)
-            for wl in wls:
-                s_wl = np.exp(-((wl - beam.wavelength) / (wl * beam.band)) ** 2) * \
-                       np.sqrt(2 * math.pi / complex(2 * math.pi * (1 + psd.distance * beam.curvature.x),
-                                                     wl * psd.distance * beam.waist ** 2))
+            for i in range(len(beam.band.wavelength)):
+                # s_wl = beam.band.intensity[i] * \
+                #        np.abs(np.sqrt(2 * math.pi /
+                #                       complex(2 * math.pi * (1 + psd.distance * beam.curvature.x),
+                #                               beam.band.wavelength[i] * psd.distance * beam.waist.x ** 2))) ** 2
                 intensity_tmp = diffraction1D(grating.coefficients.x.n, grating.coefficients.x.cn,
                                               beam.coefficients.x.n, beam.coefficients.x.cn,
-                                              beam.wavelength, beam.angle.x, beam.waist.x, beam.curvature.x,
+                                              beam.band.wavelength[i], beam.angle.x, beam.waist.x, beam.curvature.x,
                                               psd.distance, x)
-                intensity_x += s_wl * intensity_tmp
-                s_wl = np.exp(-((wl - beam.wavelength) / (wl * beam.band)) ** 2) * \
-                       np.sqrt(2 * math.pi / complex(2 * math.pi * (1 + psd.distance * beam.curvature.y),
-                                                     wl * psd.distance * beam.waist ** 2))
+                intensity_x += beam.band.intensity[i] * intensity_tmp
+                # s_wl = beam.band.intensity[i] * \
+                #        np.abs(np.sqrt(2 * math.pi /
+                #                       complex(2 * math.pi * (1 + psd.distance * beam.curvature.y),
+                #                               beam.band.wavelength[i] * psd.distance * beam.waist.y ** 2))) ** 2
                 intensity_tmp = diffraction1D(grating.coefficients.y.n, grating.coefficients.y.cn,
                                               beam.coefficients.y.n, beam.coefficients.y.cn,
-                                              beam.wavelength, beam.angle.y, beam.waist.x, beam.curvature.y,
+                                              beam.band.wavelength[i], beam.angle.y, beam.waist.x, beam.curvature.y,
                                               psd.distance, x)
-                intensity_y += s_wl * intensity_tmp
+                intensity_y += beam.band.intensity[i] * intensity_tmp
 
     else:
         intensity_x = diffraction1DAtZeroDistance(grating.coefficients.x.n, grating.coefficients.x.cn,

@@ -3,14 +3,17 @@ import datetime
 import Calculate
 import DataStructures as data
 import DisplayData
+import numpy as np
+import math
 
 
 def fromStructure(ipt):
     threads = []
     grating_coefficients = 0
     beam_coefficients = 0
+    beam_band = data.Spectrum()
 
-    def fromLine(idx, idl):
+    def fromLine(idx_line, idl):
         idl.start = datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
         if ipt.copy_grating:
             idl.grating.coefficients = grating_coefficients
@@ -20,8 +23,12 @@ def fromStructure(ipt):
             idl.beam.coefficients = beam_coefficients
         else:
             idl.beam.coefficients = Calculate.beamCoefficients(idl.beam, idl.psd.aperture, idl.add.accuracy)
+        if ipt.copy_beam_band:
+            idl.beam.band = beam_band
+        else:
+            idl.beam.band = Calculate.beambandSpectrumCoefficients(idl.beam)
         idl.psd.image = Calculate.outputDistribution(idl.grating, idl.beam, idl.psd)
-        ipt.data[idx] = idl
+        ipt.data[idx_line] = idl
         idl.end = datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
 
     if ipt.copy_grating:
@@ -29,6 +36,8 @@ def fromStructure(ipt):
     if ipt.copy_beam:
         beam_coefficients = Calculate.beamCoefficients(ipt.data[0].beam, ipt.data[0].psd.aperture,
                                                        ipt.data[0].add.accuracy)
+    if ipt.copy_beam_band:
+        beam_band = Calculate.beambandSpectrumCoefficients(ipt.data[0].beam)
     for idx in range(len(ipt.data)):
         if ipt.data[idx].is_ok:
             thread = threading.Thread(target=fromLine, args=(idx, ipt.data[idx]))

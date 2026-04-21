@@ -8,7 +8,8 @@ class Beam:
     angle = None
     wavelength = None
     aperture = None
-    band = 0
+    bandwidth = 0
+    band = None
     aberration = None
     coefficients = None
 
@@ -31,6 +32,11 @@ class Coefficients:
 
 class Distribution:
     coordinate = None
+    intensity = None
+
+
+class Spectrum:
+    wavelength = None
     intensity = None
 
 
@@ -81,6 +87,7 @@ class OutputData:
     dependencies = None
     copy_grating = False
     copy_beam = False
+    copy_beam_band = False
 
 
 class OutputDataLine:
