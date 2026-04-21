@@ -1,4 +1,3 @@
-import numpy as np
 from openpyxl import load_workbook
 from openpyxl.styles import Font, Alignment
 

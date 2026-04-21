@@ -2,9 +2,6 @@ import threading
 import datetime
 import Calculate
 import DataStructures as data
-import DisplayData
-import numpy as np
-import math
 
 
 def fromStructure(ipt):
