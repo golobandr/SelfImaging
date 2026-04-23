@@ -42,6 +42,6 @@ if len(filenames) > 0:
         print(data.text.BOLD + f'File #{index}: calculation finished at '
                                f'{datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}' + data.text.END)
         results[result.io.filename] = result
-    f = open(os.path.join(wd, 'result.dat'), 'wb')
-    pickle.dump(results, f, 2)
-    f.close()
+    # f = open(os.path.join(wd, 'result.dat'), 'wb')
+    # pickle.dump(results, f, 2)
+    # f.close()

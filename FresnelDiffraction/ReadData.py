@@ -102,11 +102,13 @@ def createStructures(filename):
             grating.index = [1, 0]
         if wavelength == 0 and 'phase' in grating.slit:
             return [False, grating, 'grating phase depth calculation is impossible with zero wavelength']
-        grating.phase_depth = 2 * math.pi * ((grating.index[0] - 1) * grating.depth / wavelength -
-                                             round((grating.index[0] - 1) * grating.depth / wavelength))
+        pd = (grating.index[0] - 1) * grating.depth / wavelength
+        grating.phase_depth = math.pi * pd
         if len(data_in) < 6:
             return [True, grating, '']
         grating.index[1] = float(data_in[5])
+        pd = (grating.index[0] + grating.index[1] * wavelength - 1) * grating.depth / wavelength
+        grating.phase_depth = math.pi * pd
         if math.isnan(grating.index[1]):
             grating.index[1] = 0
         return [True, grating, '']
@@ -240,11 +242,15 @@ def createStructures(filename):
             else:
                 if len(beam_x) >= 2 and beam_x.values[idx][1] != beam_x.values[idx - 1][1]:
                     copy_beam = False
-                if len(beam_x) >= 5 and beam_x.values[idx][4] != beam_x.values[idx - 1][4]:
+                if len(beam_x) >= 5 and not (math.isnan(beam_x.values[idx][4]) and
+                                             math.isnan(beam_x.values[idx - 1][4])) and \
+                        beam_x.values[idx][4] != beam_x.values[idx - 1][4]:
                     copy_beam = False
                 if len(beam_y) >= 2 and beam_y.values[idx][1] != beam_y.values[idx - 1][1]:
                     copy_beam = False
-                if len(beam_y) >= 5 and beam_y.values[idx][4] != beam_y.values[idx - 1][4]:
+                if len(beam_y) >= 5 and not (math.isnan(beam_y.values[idx][4]) and
+                                             math.isnan(beam_y.values[idx - 1][4])) and \
+                        beam_y.values[idx][4] != beam_y.values[idx - 1][4]:
                     copy_beam = False
         if idx > 0 and copy_beam_band and beam.values[idx][1] != 0 and \
                 beam.values[idx][1] != beam.values[idx - 1][1]:
@@ -253,6 +259,10 @@ def createStructures(filename):
     dependencies = ''
     if 'Dependencies' in xls.sheet_names:
         dependencies = pd.read_excel(filename, sheet_name='Dependencies', skiprows=0).to_string()
+        if not 'Empty' in dependencies:
+            dependencies = dependencies.split('0')[1].strip()
+        else:
+            dependencies = ''
     xls.close()
     return [True, [ret_val, dependencies, copy_grating, copy_beam, copy_beam_band]]
 

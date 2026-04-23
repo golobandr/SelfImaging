@@ -51,10 +51,8 @@ def dependencies(result):
         DisplayData.calculationError(i_error, n_error, 1E-4, result.io.filedir, 'error_distribution.png')
         dependencies['error'] = {'n': n_error,
                                  'data': i_error}
-    if result.is_ok and ('distance' in result.dependencies.lower() or
-                         'duty factor' in result.dependencies.lower() or
-                         'curvature' in result.dependencies.lower()) and len(result.data) > 2:
-        z = np.zeros(len(result.data))
+    if result.is_ok and (result.dependencies != '') and len(result.data) > 2:
+        z = np.arange(len(result.data))
         x = result.data[0].psd.image.x.coordinate
         image_x = np.zeros((len(x), len(result.data)))
         image_y = np.zeros((len(x), len(result.data)))
@@ -67,6 +65,12 @@ def dependencies(result):
                 z[idx] = result.data[idx].beam.curvature.x
             elif 'y curvature' in result.dependencies.lower():
                 z[idx] = result.data[idx].beam.curvature.x
+            elif 'x waist' in result.dependencies.lower():
+                z[idx] = result.data[idx].beam.waist.x
+            elif 'y waist' in result.dependencies.lower():
+                z[idx] = result.data[idx].beam.waist.y
+            elif 'bandwidth' in result.dependencies.lower():
+                z[idx] = result.data[idx].beam.bandwidth
             image_x[:, idx] = result.data[idx].psd.image.x.intensity
             image_y[:, idx] = result.data[idx].psd.image.y.intensity
 
@@ -74,10 +78,10 @@ def dependencies(result):
                             'carpet_scale_x.png', 'carpet_gray_x.bmp', True, True)
         DisplayData.image2D(image_y, z, x, 'Talbot carpet', result.io.filedir, 'carpet_y.png',
                             'carpet_scale_y.png', 'carpet_gray_y.bmp', True, True)
-        dependencies['distance'] = {'z': z,
-                                    'x': x,
-                                    'image_x': image_x,
-                                    'image_y': image_y}
+        dependencies[result.dependencies.lower()] = {'z': z,
+                                                     'x': x,
+                                                     'image_x': image_x,
+                                                     'image_y': image_y}
     return dependencies
 
 

@@ -28,6 +28,7 @@ class Coefficients:
     n = np.zeros(1)
     cn = np.ones(1)
     sn = np.ones(1)
+    wavelength = 0
 
 
 class Distribution:
@@ -79,6 +80,12 @@ class Io:
     spectrum = None
 
 
+class CopyData:
+    grating = None
+    beam = None
+    beamband = None
+
+
 class OutputData:
     is_ok = True
     message = ''
@@ -88,6 +95,7 @@ class OutputData:
     copy_grating = False
     copy_beam = False
     copy_beam_band = False
+    copy_data = CopyData()
 
 
 class OutputDataLine:
