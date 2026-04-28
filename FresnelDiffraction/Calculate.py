@@ -14,7 +14,10 @@ def beambandSpectrumIntensities(beam):
     else:
         delta_wl = beam.wavelength / 100
         wls_less = np.arange(beam.wavelength, beam.wavelength / (1 + 3 * beam.bandwidth) - delta_wl, -delta_wl)
-        wls_more = np.arange(beam.wavelength, beam.wavelength / (1 - 3 * beam.bandwidth) + delta_wl, delta_wl)
+        if 3 * beam.bandwidth >= 1:
+            wls_more = np.arange(beam.wavelength, beam.wavelength * 100 + delta_wl, delta_wl)
+        else:
+            wls_more = np.arange(beam.wavelength, beam.wavelength / (1 - 3 * beam.bandwidth) + delta_wl, delta_wl)
         wls = np.sort(np.array(list(set(np.append(wls_less, wls_more)))))
         if len(wls) == 1:
             wls = wls[0]
@@ -147,7 +150,7 @@ def gratingCoefficients(grating, wl, accuracy):
                 pd = (grating.index[0] - 1) * grating.depth / wavelength
             else:
                 pd = (grating.index[0] + grating.index[1] * wavelength - 1) * grating.depth / wavelength
-            grating.phase_depth = math.pi * pd
+            grating.phase_depth = 2 * math.pi * pd
             opt_coeff.append([grating.phase_depth, setCoefficientsForWL(grating)])
         return opt_coeff
 

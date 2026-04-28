@@ -103,12 +103,12 @@ def createStructures(filename):
         if wavelength == 0 and 'phase' in grating.slit:
             return [False, grating, 'grating phase depth calculation is impossible with zero wavelength']
         pd = (grating.index[0] - 1) * grating.depth / wavelength
-        grating.phase_depth = math.pi * pd
+        grating.phase_depth = 2 * math.pi * pd
         if len(data_in) < 6:
             return [True, grating, '']
         grating.index[1] = float(data_in[5])
         pd = (grating.index[0] + grating.index[1] * wavelength - 1) * grating.depth / wavelength
-        grating.phase_depth = math.pi * pd
+        grating.phase_depth = 2 * math.pi * pd
         if math.isnan(grating.index[1]):
             grating.index[1] = 0
         return [True, grating, '']

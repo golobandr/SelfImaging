@@ -23,14 +23,13 @@ if len(filenames) > 0:
     wd = os.path.join(wd, cur_dt)
     if not os.path.isdir(wd):
         os.mkdir(wd)
-    results = {}
     for index, filename in enumerate(filenames, start=1):
         print(data.text.BOLD + f'File {filename}' + data.text.END)
+        st_time = datetime.datetime.now()
         print(data.text.BOLD + f'File #{index}: calculation started at '
-                               f'{datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}\n' + data.text.END)
+                               f'{st_time.strftime("%Y/%m/%d %H:%M:%S")}\n' + data.text.END)
         [is_ok, result] = ReadData.fromFile(wd, filename)
         if not is_ok:
-            results[result.io.filename] = result
             continue
         result = ProcessData.fromStructure(result)
         print(f'\n  Data visualization and saving started at {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
@@ -39,9 +38,14 @@ if len(filenames) > 0:
         result.dependencies = VisualizeData.dependencies(result)
         SaveData.forDependencies(result)
         print(f'  Data visualization and saving finished at {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}\n')
+        end_time = datetime.datetime.now()
         print(data.text.BOLD + f'File #{index}: calculation finished at '
-                               f'{datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}' + data.text.END)
-        results[result.io.filename] = result
-    # f = open(os.path.join(wd, 'result.dat'), 'wb')
-    # pickle.dump(results, f, 2)
-    # f.close()
+                               f'{end_time.strftime("%Y/%m/%d %H:%M:%S")}' + data.text.END)
+        calc_time = end_time - st_time
+        print(data.text.BOLD + f'File #{index}: calculation time is '
+                               f'{calc_time}' + data.text.END)
+
+        f = open(os.path.join(result.io.filedir, 'result.dat'), 'wb')
+        pickle.dump(result, f, 2)
+        f.close()
+        del result

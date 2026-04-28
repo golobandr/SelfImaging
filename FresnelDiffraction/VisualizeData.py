@@ -52,7 +52,7 @@ def dependencies(result):
         dependencies['error'] = {'n': n_error,
                                  'data': i_error}
     if result.is_ok and (result.dependencies != '') and len(result.data) > 2:
-        z = np.arange(len(result.data))
+        z = np.arange(len(result.data), dtype=float)
         x = result.data[0].psd.image.x.coordinate
         image_x = np.zeros((len(x), len(result.data)))
         image_y = np.zeros((len(x), len(result.data)))
@@ -64,13 +64,13 @@ def dependencies(result):
             elif 'x curvature' in result.dependencies.lower():
                 z[idx] = result.data[idx].beam.curvature.x
             elif 'y curvature' in result.dependencies.lower():
-                z[idx] = result.data[idx].beam.curvature.x
+                z[idx] = result.data[idx].beam.curvature.y
             elif 'x waist' in result.dependencies.lower():
                 z[idx] = result.data[idx].beam.waist.x
             elif 'y waist' in result.dependencies.lower():
                 z[idx] = result.data[idx].beam.waist.y
             elif 'bandwidth' in result.dependencies.lower():
-                z[idx] = result.data[idx].beam.bandwidth
+                z[idx] = result.data[idx].beam.bandwidth * 100
             image_x[:, idx] = result.data[idx].psd.image.x.intensity
             image_y[:, idx] = result.data[idx].psd.image.y.intensity
 
@@ -78,6 +78,12 @@ def dependencies(result):
                             'carpet_scale_x.png', 'carpet_gray_x.bmp', True, True)
         DisplayData.image2D(image_y, z, x, 'Talbot carpet', result.io.filedir, 'carpet_y.png',
                             'carpet_scale_y.png', 'carpet_gray_y.bmp', True, True)
+        DisplayData.image2D(convertScale(image_x), z, x, 'Talbot carpet', result.io.filedir,
+                            'scaled_carpet_x.png', 'scalsed_carpet_scale_x.png',
+                            'scaled_carpet_gray_x.bmp', True, True)
+        DisplayData.image2D(convertScale(image_y), z, x, 'Talbot carpet', result.io.filedir,
+                            'scaled_carpet_y.png', 'scalsed_carpet_scale_y.png',
+                            'scaled_carpet_gray_y.bmp', True, True)
         dependencies[result.dependencies.lower()] = {'z': z,
                                                      'x': x,
                                                      'image_x': image_x,
