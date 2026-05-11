@@ -3,11 +3,15 @@ import datetime
 from tkinter import Tk
 from tkinter.filedialog import askopenfilenames
 import pickle
+
+from sympy.codegen.cfunctions import isnan
+
 import ProcessData
 import ReadData
 import DataStructures as data
 import VisualizeData
 import SaveData
+import platform
 
 if __name__ == "__main__":
     dt = datetime.datetime.now()
@@ -25,6 +29,10 @@ if __name__ == "__main__":
             if file.endswith(".xls") or file.endswith(".xlsx"):
                 filenames.append(os.path.join(dn, file))
 
+    log_str = (f'Calculation start time: {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}\n'
+               f'System parameters:\n'
+               f'  OS:        {platform.system()} ({platform.platform()})\n'
+               f'  Processor: {platform.processor()} ({os.cpu_count()} cores)\n\n')
     if len(filenames) > 0:
         wd = os.path.join(os.path.dirname(os.path.realpath(filenames[0])), "results")
         if not os.path.isdir(wd):
@@ -34,27 +42,35 @@ if __name__ == "__main__":
             os.mkdir(wd)
         for index, filename in enumerate(filenames, start=1):
             print(data.text.BOLD + f'File {filename}' + data.text.END)
+            log_str += f'File {filename}\n'
             st_time = datetime.datetime.now()
             print(data.text.BOLD + f'File #{index}: calculation started at '
                                    f'{st_time.strftime("%Y/%m/%d %H:%M:%S")}\n' + data.text.END)
+            log_str += f'File #{index}: calculation started at {st_time.strftime("%Y/%m/%d %H:%M:%S")}\n'
             [is_ok, result] = ReadData.fromFile(wd, filename)
             if not is_ok:
                 continue
             result = ProcessData.fromStructure(result)
-            print(f'\n  Data visualization and saving started at {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
+            print(f'\n  Data visualization and saving started at '
+                  f'{datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}')
             VisualizeData.images(result)
             SaveData.fromDatLine(result)
             result.dependencies = VisualizeData.dependencies(result)
             SaveData.forDependencies(result)
-            print(f'  Data visualization and saving finished at {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}\n')
+            print(f'  Data visualization and saving finished at '
+                  f'{datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}\n')
             end_time = datetime.datetime.now()
             print(data.text.BOLD + f'File #{index}: calculation finished at '
                                    f'{end_time.strftime("%Y/%m/%d %H:%M:%S")}' + data.text.END)
+            log_str += f'File #{index}: calculation finished at {st_time.strftime("%Y/%m/%d %H:%M:%S")}\n'
             calc_time = end_time - st_time
             print(data.text.BOLD + f'File #{index}: calculation time is '
                                    f'{calc_time}' + data.text.END)
-
+            log_str += f'File #{index}: calculation time is {calc_time}\n\n'
             f = open(os.path.join(result.io.filedir, 'result.dat'), 'wb')
             pickle.dump(result, f, 2)
             f.close()
             del result
+        f = open(os.path.join(wd, 'result.log'), 'w')
+        f.write(log_str)
+        f.close()

@@ -69,7 +69,7 @@ def image2D(image, x, y, title_str, wd, fn, fn1, fn2, is_d, is_s):
     if is_d and is_s:
         plt.figure(figsize=(8, 8), dpi=300)
         plt.imshow(image, extent=(x.min(), x.max(), y.min(), y.max()),
-                   cmap='hot', interpolation='nearest', origin='lower',
+                   cmap='jet', interpolation='nearest', origin='lower',
                    aspect='auto')
         plt.colorbar()
         plt.title(title_str)
