@@ -65,10 +65,14 @@ def dependencies(result):
                 z[idx] = result.data[idx].beam.curvature.x
             elif 'y curvature' in result.dependencies.lower():
                 z[idx] = result.data[idx].beam.curvature.y
+            elif 'x aperture' in result.dependencies.lower():
+                z[idx] = result.data[idx].beam.aperture.x
+            elif 'y aperture' in result.dependencies.lower():
+                z[idx] = result.data[idx].beam.aperture.y
             elif 'x waist' in result.dependencies.lower():
-                z[idx] = result.data[idx].beam.waist.x
+                z[idx] = result.data[idx].beam.waist.x / 2
             elif 'y waist' in result.dependencies.lower():
-                z[idx] = result.data[idx].beam.waist.y
+                z[idx] = result.data[idx].beam.waist.y / 2
             elif 'bandwidth' in result.dependencies.lower():
                 z[idx] = result.data[idx].beam.bandwidth * 100
             image_x[:, idx] = result.data[idx].psd.image.x.intensity

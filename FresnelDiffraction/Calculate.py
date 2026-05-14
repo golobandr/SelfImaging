@@ -2,6 +2,7 @@ import numpy as np
 import DataStructures as data
 import math
 import statistics
+import scipy
 
 width_init = 300
 
@@ -39,16 +40,13 @@ def beamCoefficients(beam, aperture, accuracy):
             else:
                 period = 20 * a
             coordinate = np.linspace(-period / 2, period / 2, num=2 * width + 1, endpoint=False)
-            profile = np.zeros(2 * width + 1)
-            for i in range(len(profile)):
-                profile[i] = 0 if abs(coordinate[i]) > 1 / (2 * beam_a) else 1
-            profile = profile / sum(profile)
+            profile = np.ones(2 * width + 1)
             if function != '':
                 function = function.replace(coord_letter, 'coordinate')
                 phase = eval(function)
                 profile = profile * np.exp(1j * phase)
             am = np.fft.fftshift(np.fft.fft(np.fft.fftshift(profile)))
-            [coef.n, coef.cn, coef.sn] = fourierCoefficientsUpdate(am, width, period, accuracy)
+            [coef.n, coef.cn, coef.sn] = fourierCoefficientsUpdate(am, width, period, accuracy / 100)
         return coef
 
     coefficients = data.Distribution2D()
@@ -177,22 +175,28 @@ def outputDistribution(grating, beam, psd):
         distribution.intensity = int_out
         return distribution
 
-    def diffraction1D(n, cn, m, am, wl, angle, waist, wfc, distance, x):
-        a = ((math.pi ** 2 * 2 * wl * distance) /
-             complex(wl * distance * waist ** 2, -2 * math.pi * (1 + wfc * distance)))
-        x = -1 / (wl * distance) * x - math.sin(angle) / (2 * wl)
+    def diffraction1D(n, cn, m, am, wl, angle, waist, wfc, a, distance, x):
+        b = 1 / (waist ** 2 / 2 + 1j * math.pi * (wfc + 1 / distance) / wl)
+        bs = 1 / np.sqrt(b)
+        x = -(x / distance + 0.5 * math.sin(angle)) / wl
         u = np.zeros(len(x), dtype=complex)
         for i in range(len(x)):
             for j in range(len(m)):
                 for k in range(len(n)):
-                    exp_a = np.exp(-a * (x[i] + n[k] + m[j]) ** 2)
-                    u[i] += exp_a * cn[k] * am[j]
+                    c = 1j * math.pi * (x[i] + n[k] + m[j])
+                    exp_a = np.exp(b * c ** 2) * cn[k] * am[j]
+                    if a != 0:
+                        cb = c * b
+                        exp_a *= 0.5 * (scipy.special.erf(bs * (1 / (2 * a) - cb)) +
+                                        scipy.special.erf(bs * (1 / (2 * a) + cb)))
+                    u[i] += exp_a
+
         return np.abs(u) ** 2
 
-    def spectralDiffraction1D(bbi, n, cn, m, am, wl, angle, waist, wfc, distance, x):
+    def spectralDiffraction1D(bbi, n, cn, m, am, wl, angle, waist, wfc, a, distance, x):
         swl = bbi * np.abs(np.sqrt(2 * math.pi / complex(2 * math.pi * (1 + distance * wfc),
                                                          wl * distance * waist ** 2))) ** 2
-        intensity = swl * diffraction1D(n, cn, m, am, wl, angle, waist, wfc, distance, x)
+        intensity = swl * diffraction1D(n, cn, m, am, wl, angle, waist, wfc, a, distance, x)
         return intensity
 
     pts = round(psd.aperture // psd.step) + 1
@@ -200,12 +204,14 @@ def outputDistribution(grating, beam, psd):
     x = np.linspace(-psd.aperture / 2, psd.aperture / 2, round(pts * psd.div_factor))
     if psd.distance > 0:
         if beam.bandwidth == 0:
-            intensity_x = diffraction1D(grating.coefficients.x.n, grating.coefficients.x.cn,
-                                        beam.coefficients.x.n, beam.coefficients.x.cn,
-                                        beam.wavelength, beam.angle.x, beam.waist.x, beam.curvature.x, psd.distance, x)
-            intensity_y = diffraction1D(grating.coefficients.y.n, grating.coefficients.y.cn,
-                                        beam.coefficients.y.n, beam.coefficients.y.cn,
-                                        beam.wavelength, beam.angle.y, beam.waist.y, beam.curvature.y, psd.distance, x)
+            intensity_x = spectralDiffraction1D(1, grating.coefficients.x.n, grating.coefficients.x.cn,
+                                                beam.coefficients.x.n, beam.coefficients.x.cn,
+                                                beam.wavelength, beam.angle.x, beam.waist.x, beam.curvature.x,
+                                                beam.aperture.x, psd.distance, x)
+            intensity_y = spectralDiffraction1D(1, grating.coefficients.y.n, grating.coefficients.y.cn,
+                                                beam.coefficients.y.n, beam.coefficients.y.cn,
+                                                beam.wavelength, beam.angle.y, beam.waist.y, beam.curvature.y,
+                                                beam.aperture.y, psd.distance, x)
         else:
             intensity_x = np.zeros(len(x))
             intensity_y = np.zeros(len(x))
@@ -215,24 +221,28 @@ def outputDistribution(grating, beam, psd):
                         spectralDiffraction1D(beam.band.intensity[i],
                                               grating.coefficients[i][1].x.n, grating.coefficients[i][1].x.cn,
                                               beam.coefficients.x.n, beam.coefficients.x.cn, beam.band.wavelength[i],
-                                              beam.angle.x, beam.waist.x, beam.curvature.x, psd.distance, x)
+                                              beam.angle.x, beam.waist.x, beam.curvature.x, beam.aperture.x,
+                                              psd.distance, x)
                     intensity_y += \
                         spectralDiffraction1D(beam.band.intensity[i],
                                               grating.coefficients[i][1].y.n, grating.coefficients[i][1].y.cn,
                                               beam.coefficients.y.n, beam.coefficients.y.cn, beam.band.wavelength[i],
-                                              beam.angle.y, beam.waist.x, beam.curvature.y, psd.distance, x)
+                                              beam.angle.y, beam.waist.x, beam.curvature.y, beam.aperture.y,
+                                              psd.distance, x)
             else:
                 for i in range(len(beam.band.wavelength)):
                     intensity_x += \
                         spectralDiffraction1D(beam.band.intensity[i],
                                               grating.coefficients.x.n, grating.coefficients.x.cn,
                                               beam.coefficients.x.n, beam.coefficients.x.cn, beam.band.wavelength[i],
-                                              beam.angle.x, beam.waist.x, beam.curvature.x, psd.distance, x)
+                                              beam.angle.x, beam.waist.x, beam.curvature.x, beam.aperture.x,
+                                              psd.distance, x)
                     intensity_y += \
                         spectralDiffraction1D(beam.band.intensity[i],
                                               grating.coefficients.y.n, grating.coefficients.y.cn,
                                               beam.coefficients.y.n, beam.coefficients.y.cn, beam.band.wavelength[i],
-                                              beam.angle.y, beam.waist.x, beam.curvature.y, psd.distance, x)
+                                              beam.angle.y, beam.waist.x, beam.curvature.y, beam.aperture.y,
+                                              psd.distance, x)
     else:
         if type([]) != type(grating.coefficients):
             intensity_x = diffraction1DAtZeroDistance(grating.coefficients.x.n, grating.coefficients.x.cn,
