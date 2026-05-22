@@ -18,6 +18,24 @@ def images(result):
                                     'FF Image', result.io.filedir, f'psd_image_{idx}.png',
                                     f'psd_image_scale_{idx}.png', f'psd_image_gray_{idx}.bmp',
                                     result.data[idx].add.debug, result.data[idx].add.save)
+                if result.data[idx].beam.angle.y != 0 or result.data[idx].beam.angle.x != 0 or \
+                        result.data[idx].beam.curvature.y != 0 or result.data[idx].beam.curvature.x != 0:
+                    phase_x = result.data[idx].psd.image.x.coordinate * np.sin(result.data[idx].beam.angle.x) + \
+                              result.data[idx].psd.image.x.coordinate ** 2 * result.data[idx].beam.curvature.x
+                    phase_y = result.data[idx].psd.image.y.coordinate * np.sin(result.data[idx].beam.angle.y) + \
+                              result.data[idx].psd.image.y.coordinate ** 2 * result.data[idx].beam.curvature.y
+                    phase_x /= np.max(phase_x)
+                    phase_y /= np.max(phase_y)
+                    pts = len(result.data[idx].psd.image.x.coordinate)
+                    image = np.zeros((pts, pts))
+                    for i in range(pts):
+                        for j in range(pts):
+                            image[i, j] = phase_x[i] * phase_y[j]
+                    DisplayData.image2D(image, result.data[idx].psd.image.x.coordinate,
+                                        result.data[idx].psd.image.y.coordinate,
+                                        'WF', result.io.filedir, f'wf_image_{idx}.png',
+                                        f'wf_image_scale_{idx}.png', f'wf_image_gray_{idx}.bmp',
+                                        result.data[idx].add.debug, result.data[idx].add.save)
                 if result.data[idx].add.debug:
                     DisplayData.twoSpectra(result.data[idx].grating.coefficients.x.n,
                                            result.data[idx].grating.coefficients.x.sn, 'x',
@@ -30,9 +48,11 @@ def images(result):
                                            result.data[idx].beam.coefficients.y.sn, 'y', result.io.filedir,
                                            f'beam_spectrum_{idx}.png')
                     DisplayData.intensities(result.data[idx].psd.image.x.coordinate,
-                                            result.data[idx].psd.image.x.intensity, 'x',
+                                            result.data[idx].psd.image.x.intensity /
+                                            np.max(result.data[idx].psd.image.x.intensity), 'x',
                                             result.data[idx].psd.image.y.coordinate,
-                                            result.data[idx].psd.image.y.intensity, 'y', result.io.filedir,
+                                            result.data[idx].psd.image.y.intensity /
+                                            np.max(result.data[idx].psd.image.y.intensity), 'y', result.io.filedir,
                                             f'psd_1d_distribution_{idx}.png')
         else:
             print('    ' + data.text.RED + f'Line {idx + 1} visualization skipped since input data is '
@@ -56,6 +76,8 @@ def dependencies(result):
         x = result.data[0].psd.image.x.coordinate
         image_x = np.zeros((len(x), len(result.data)))
         image_y = np.zeros((len(x), len(result.data)))
+        image_x_n = np.zeros((len(x), len(result.data)))
+        image_y_n = np.zeros((len(x), len(result.data)))
         for idx in range(len(result.data)):
             if 'distance' in result.dependencies.lower():
                 z[idx] = result.data[idx].psd.distance
@@ -77,11 +99,21 @@ def dependencies(result):
                 z[idx] = result.data[idx].beam.bandwidth * 100
             image_x[:, idx] = result.data[idx].psd.image.x.intensity
             image_y[:, idx] = result.data[idx].psd.image.y.intensity
+            image_x_n[:, idx] = ((result.data[idx].psd.image.x.intensity -
+                                  np.min(result.data[idx].psd.image.x.intensity)) /
+                                 np.max(result.data[idx].psd.image.x.intensity))
+            image_y_n[:, idx] = ((result.data[idx].psd.image.y.intensity -
+                                  np.min(result.data[idx].psd.image.y.intensity)) /
+                                 np.max(result.data[idx].psd.image.y.intensity))
 
         DisplayData.image2D(image_x, z, x, 'Talbot carpet', result.io.filedir, 'carpet_x.png',
                             'carpet_scale_x.png', 'carpet_gray_x.bmp', True, True)
         DisplayData.image2D(image_y, z, x, 'Talbot carpet', result.io.filedir, 'carpet_y.png',
                             'carpet_scale_y.png', 'carpet_gray_y.bmp', True, True)
+        DisplayData.image2D(image_x_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_x_n.png',
+                            'carpet_scale_x_n.png', 'carpet_gray_x_n.bmp', True, True)
+        DisplayData.image2D(image_y_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_y_n.png',
+                            'carpet_scale_y_n.png', 'carpet_gray_y_n.bmp', True, True)
         DisplayData.image2D(convertScale(image_x), z, x, 'Talbot carpet', result.io.filedir,
                             'scaled_carpet_x.png', 'scalsed_carpet_scale_x.png',
                             'scaled_carpet_gray_x.bmp', True, True)

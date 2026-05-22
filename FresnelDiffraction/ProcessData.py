@@ -26,7 +26,7 @@ def fromLine(idx_line, idl, copy_beam_band, copy_beam, copy_grating, copy_data):
         if copy_beam:
             tmp_beam.coefficients = copy_data.beam
         else:
-            idl.beam.coefficients = Calculate.beamCoefficients(idl.beam, idl.psd.aperture, idl.add.accuracy)
+            idl.beam.coefficients = Calculate.beamCoefficients(idl.beam, idl.add.accuracy)
             tmp_beam.coefficients = idl.beam.coefficients
         idl.psd.image = Calculate.outputDistribution(tmp_grating, tmp_beam, idl.psd)
         idl.end = datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
@@ -44,8 +44,7 @@ def fromStructure(ipt):
         ipt.copy_data.grating = Calculate.gratingCoefficients(ipt.data[0].grating, ipt.copy_data.beamband.wavelength,
                                                               ipt.data[0].add.accuracy)
     if ipt.copy_beam:
-        ipt.copy_data.beam = Calculate.beamCoefficients(ipt.data[0].beam, ipt.data[0].psd.aperture,
-                                                        ipt.data[0].add.accuracy)
+        ipt.copy_data.beam = Calculate.beamCoefficients(ipt.data[0].beam, ipt.data[0].add.accuracy)
 
     ctx = multiprocessing.get_context("spawn")
     tmp_data = {}

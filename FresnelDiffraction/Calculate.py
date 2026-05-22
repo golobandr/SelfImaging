@@ -30,28 +30,21 @@ def beambandSpectrumIntensities(beam):
     return beam_band
 
 
-def beamCoefficients(beam, aperture, accuracy):
-    def setCoef(beam_a, a, function, coord_letter):
+def beamCoefficients(beam, accuracy):
+    def setCoef(beam_a, function, coord_letter):
         coef = data.Coefficients()
-        if beam_a != 0:
+        if function != '':
             width = width_init
-            if 1 / beam_a > a:
-                period = 20 / beam_a
-            else:
-                period = 20 * a
-            coordinate = np.linspace(-period / 2, period / 2, num=2 * width + 1, endpoint=False)
-            profile = np.ones(2 * width + 1)
-            if function != '':
-                function = function.replace(coord_letter, 'coordinate')
-                phase = eval(function)
-                profile = profile * np.exp(1j * phase)
-            am = np.fft.fftshift(np.fft.fft(np.fft.fftshift(profile)))
-            [coef.n, coef.cn, coef.sn] = fourierCoefficientsUpdate(am, width, period, accuracy / 100)
+            coordinate = np.linspace(-0.5 / beam_a, 0.5 / beam_a, num=2 * width + 1, endpoint=False)
+            function = function.replace(coord_letter, 'coordinate')
+            phase = eval(function)
+            am = np.fft.fftshift(np.fft.fft(np.exp(1j * phase)))
+            [coef.n, coef.cn, coef.sn] = fourierCoefficientsUpdate(am, width, 1 / beam_a, accuracy / 100)
         return coef
 
     coefficients = data.Distribution2D()
-    coefficients.x = setCoef(beam.aperture.x, aperture, beam.aberration.x, 'x')
-    coefficients.y = setCoef(beam.aperture.y, aperture, beam.aberration.y, 'y')
+    coefficients.x = setCoef(beam.aperture.x, beam.aberration.x, 'x')
+    coefficients.y = setCoef(beam.aperture.y, beam.aberration.y, 'y')
     return coefficients
 
 
@@ -101,6 +94,11 @@ def gratingCoefficients(grating, wl, accuracy):
                 y[i] = 1
         return y
 
+    def lens(x, r):
+        y = np.sqrt(r ** 2 - x ** 2)
+        y = y - y[0]
+        return -y
+
     def fourierReCoefficients(grating):
         width = width_init
         if 'delta' in grating.slit:
@@ -119,6 +117,9 @@ def gratingCoefficients(grating, wl, accuracy):
         x = np.linspace(-grating.period / 2, grating.period / 2, num=2 * width + 1, endpoint=False)
         if 'cos' in grating.slit:
             phase = np.cos(2 * np.pi / grating.period * x)
+        elif 'lens' in grating.slit:
+            lens_r = grating.depth + grating.period ** 2 / (4 * grating.depth)
+            phase = lens(x, lens_r)
         else:
             phase = rect(x / (grating.period * grating.duty_factor))
         pit = np.exp(1j * grating.phase_depth * phase)
@@ -156,13 +157,16 @@ def gratingCoefficients(grating, wl, accuracy):
 
 
 def outputDistribution(grating, beam, psd):
-    def diffraction1DAtZeroDistance(n, cn, m, am, waist, x):
+    def diffraction1DAtZeroDistance(n, cn, waist, a, x):
         u = np.zeros(len(x), dtype=complex)
         y = 1j * 2 * math.pi * x
+        a_max = max(x)
+        if a != 0:
+            a_max = 1 / (2 * a)
         for i in range(len(x)):
-            for j in range(len(m)):
+            if abs(x[i]) <= a_max:
                 for k in range(len(n)):
-                    u[i] += cn[k] * am[j] * np.exp(-y[i] * (n[k] + m[j]))
+                    u[i] += cn[k] * np.exp(-y[i] * n[k])
         u = u * np.exp(-(x * waist) ** 2 / 2)
         return np.abs(u) ** 2
 
@@ -246,11 +250,9 @@ def outputDistribution(grating, beam, psd):
     else:
         if type([]) != type(grating.coefficients):
             intensity_x = diffraction1DAtZeroDistance(grating.coefficients.x.n, grating.coefficients.x.cn,
-                                                      beam.coefficients.x.n, beam.coefficients.x.cn,
-                                                      beam.waist.x, x)
+                                                      beam.waist.x, beam.aperture.x, x)
             intensity_y = diffraction1DAtZeroDistance(grating.coefficients.y.n, grating.coefficients.y.cn,
-                                                      beam.coefficients.y.n, beam.coefficients.y.cn,
-                                                      beam.waist.y, x)
+                                                      beam.waist.y, beam.aperture.y, x)
         else:
             intensity_x = np.zeros(len(x))
             intensity_y = np.zeros(len(x))
@@ -258,13 +260,11 @@ def outputDistribution(grating, beam, psd):
                 intensity_x += beam.band.intensity[i] * \
                                diffraction1DAtZeroDistance(grating.coefficients[i][1].x.n,
                                                            grating.coefficients[i][1].x.cn,
-                                                           beam.coefficients.x.n, beam.coefficients.x.cn,
-                                                           beam.waist.x, x)
+                                                           beam.waist.x, beam.aperture.x, x)
                 intensity_y += beam.band.intensity[i] * \
                                diffraction1DAtZeroDistance(grating.coefficients[i][1].y.n,
                                                            grating.coefficients[i][1].y.cn,
-                                                           beam.coefficients.y.n, beam.coefficients.y.cn,
-                                                           beam.waist.y, x)
+                                                           beam.waist.y, beam.aperture.y, x)
 
     x = np.linspace(-psd.aperture / 2, psd.aperture / 2, pts)
     intensity = data.Distribution2D()

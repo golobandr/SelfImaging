@@ -247,16 +247,12 @@ def createStructures(filename):
                         if not (math.isnan(beam_x.values[idx][4]) and math.isnan(beam_x.values[idx - 1][4])) and \
                                 beam_x.values[idx][4] != beam_x.values[idx - 1][4]:
                             copy_beam = False
-                        elif beam_x.values[idx][4] != beam_x.values[idx - 1][4]:
-                            copy_beam = False
                 if len(beam_y) >= 2 and beam_y.values[idx][1] != beam_y.values[idx - 1][1]:
                     copy_beam = False
                 if len(beam_y) >= 5:
                     if type(beam_y.values[idx][4]) != type(' '):
                         if not (math.isnan(beam_y.values[idx][4]) and math.isnan(beam_y.values[idx - 1][4])) and \
                                 beam_y.values[idx][4] != beam_y.values[idx - 1][4]:
-                            copy_beam = False
-                        elif beam_y.values[idx][4] != beam_y.values[idx - 1][4]:
                             copy_beam = False
         if idx > 0 and copy_beam_band and beam.values[idx][1] != 0 and \
                 beam.values[idx][1] != beam.values[idx - 1][1]:
