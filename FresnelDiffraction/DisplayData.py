@@ -64,19 +64,17 @@ def calculationError(error, n, ymin, wd, fn):
     plt.close()
 
 
-def image2D(image, x, y, title_str, wd, fn, fn1, fn2, is_d, is_s):
+def image2D(image, x, y, title_str, wd, fn, is_d, is_s):
     image = image / image.max()
+    plt.figure(figsize=(8, 8), dpi=300)
+    plt.imshow(image, extent=(x.min(), x.max(), y.min(), y.max()), cmap='jet',
+               interpolation='nearest', origin='lower', aspect='auto')
+    plt.colorbar()
+    plt.title(title_str)
+    plt.savefig(os.path.join(wd, 'scaled_' + fn + '.png'))
+    plt.close()
     if is_d and is_s:
-        plt.figure(figsize=(8, 8), dpi=300)
-        plt.imshow(image, extent=(x.min(), x.max(), y.min(), y.max()),
-                   cmap='jet', interpolation='nearest', origin='lower',
-                   aspect='auto')
-        plt.colorbar()
-        plt.title(title_str)
-        plt.savefig(os.path.join(wd, fn1))
-        plt.close()
         image = (image * 255).astype(np.uint8)
-        Image.fromarray(image).save(os.path.join(wd, fn2), 'BMP')
-    if is_s:
-        plt.imsave(os.path.join(str(wd), 'hot_' + fn), image, cmap='hot')
-        plt.imsave(os.path.join(str(wd), 'jet_' + fn), image, cmap='jet')
+        Image.fromarray(image).save(os.path.join(wd, fn + '.bmp'), 'BMP')
+    elif is_s:
+        plt.imsave(os.path.join(str(wd), fn + '.png'), image, cmap='jet')

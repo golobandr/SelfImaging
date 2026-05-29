@@ -15,8 +15,7 @@ def images(result):
                                       result.data[idx].psd.image.y.intensity[j]
                 DisplayData.image2D(image, result.data[idx].psd.image.x.coordinate,
                                     result.data[idx].psd.image.y.coordinate,
-                                    'FF Image', result.io.filedir, f'psd_image_{idx}.png',
-                                    f'psd_image_scale_{idx}.png', f'psd_image_gray_{idx}.bmp',
+                                    'FF Image', result.io.filedir, f'psd_image_{idx}',
                                     result.data[idx].add.debug, result.data[idx].add.save)
                 if result.data[idx].beam.angle.y != 0 or result.data[idx].beam.angle.x != 0 or \
                         result.data[idx].beam.curvature.y != 0 or result.data[idx].beam.curvature.x != 0:
@@ -33,8 +32,7 @@ def images(result):
                             image[i, j] = phase_x[i] * phase_y[j]
                     DisplayData.image2D(image, result.data[idx].psd.image.x.coordinate,
                                         result.data[idx].psd.image.y.coordinate,
-                                        'WF', result.io.filedir, f'wf_image_{idx}.png',
-                                        f'wf_image_scale_{idx}.png', f'wf_image_gray_{idx}.bmp',
+                                        'WF', result.io.filedir, f'wf_image_{idx}',
                                         result.data[idx].add.debug, result.data[idx].add.save)
                 if result.data[idx].add.debug:
                     DisplayData.twoSpectra(result.data[idx].grating.coefficients.x.n,
@@ -79,6 +77,18 @@ def dependencies(result):
         image_x_n = np.zeros((len(x), len(result.data)))
         image_y_n = np.zeros((len(x), len(result.data)))
         for idx in range(len(result.data)):
+            image_x[:, idx] = result.data[idx].psd.image.x.intensity * result.data[idx].beam.intensity
+            image_y[:, idx] = result.data[idx].psd.image.y.intensity * result.data[idx].beam.intensity
+            if result.data[idx].beam.intensity != 0:
+                image_x_n[:, idx] = ((result.data[idx].psd.image.x.intensity -
+                                      np.min(result.data[idx].psd.image.x.intensity)) /
+                                     np.max(result.data[idx].psd.image.x.intensity))
+                image_y_n[:, idx] = ((result.data[idx].psd.image.y.intensity -
+                                      np.min(result.data[idx].psd.image.y.intensity)) /
+                                     np.max(result.data[idx].psd.image.y.intensity))
+            else:
+                image_x_n[:, idx] = result.data[idx].psd.image.x.intensity * result.data[idx].beam.intensity
+                image_y_n[:, idx] = result.data[idx].psd.image.y.intensity * result.data[idx].beam.intensity
             if 'distance' in result.dependencies.lower():
                 z[idx] = result.data[idx].psd.distance
             elif 'duty factor' in result.dependencies.lower():
@@ -97,29 +107,27 @@ def dependencies(result):
                 z[idx] = result.data[idx].beam.waist.y / 2
             elif 'bandwidth' in result.dependencies.lower():
                 z[idx] = result.data[idx].beam.bandwidth * 100
-            image_x[:, idx] = result.data[idx].psd.image.x.intensity
-            image_y[:, idx] = result.data[idx].psd.image.y.intensity
-            image_x_n[:, idx] = ((result.data[idx].psd.image.x.intensity -
-                                  np.min(result.data[idx].psd.image.x.intensity)) /
-                                 np.max(result.data[idx].psd.image.x.intensity))
-            image_y_n[:, idx] = ((result.data[idx].psd.image.y.intensity -
-                                  np.min(result.data[idx].psd.image.y.intensity)) /
-                                 np.max(result.data[idx].psd.image.y.intensity))
 
-        DisplayData.image2D(image_x, z, x, 'Talbot carpet', result.io.filedir, 'carpet_x.png',
-                            'carpet_scale_x.png', 'carpet_gray_x.bmp', True, True)
-        DisplayData.image2D(image_y, z, x, 'Talbot carpet', result.io.filedir, 'carpet_y.png',
-                            'carpet_scale_y.png', 'carpet_gray_y.bmp', True, True)
-        DisplayData.image2D(image_x_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_x_n.png',
-                            'carpet_scale_x_n.png', 'carpet_gray_x_n.bmp', True, True)
-        DisplayData.image2D(image_y_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_y_n.png',
-                            'carpet_scale_y_n.png', 'carpet_gray_y_n.bmp', True, True)
-        DisplayData.image2D(convertScale(image_x), z, x, 'Talbot carpet', result.io.filedir,
-                            'scaled_carpet_x.png', 'scalsed_carpet_scale_x.png',
-                            'scaled_carpet_gray_x.bmp', True, True)
-        DisplayData.image2D(convertScale(image_y), z, x, 'Talbot carpet', result.io.filedir,
-                            'scaled_carpet_y.png', 'scalsed_carpet_scale_y.png',
-                            'scaled_carpet_gray_y.bmp', True, True)
+        if 'distance' in result.dependencies.lower() or 'duty factor' in result.dependencies.lower() or \
+                'bandwidth' in result.dependencies.lower():
+            DisplayData.image2D(image_x, z, x, 'Talbot carpet', result.io.filedir, 'carpet_x',
+                                False, True)
+            DisplayData.image2D(image_y, z, x, 'Talbot carpet', result.io.filedir, 'carpet_y',
+                                False, True)
+            DisplayData.image2D(image_x_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_x_n',
+                                False, True)
+            DisplayData.image2D(image_y_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_y_n',
+                                False, True)
+        elif 'x ' in result.dependencies.lower():
+            DisplayData.image2D(image_x, z, x, 'Talbot carpet', result.io.filedir, 'carpet',
+                                False, True)
+            DisplayData.image2D(image_x_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_n',
+                                False, True)
+        elif 'y ' in result.dependencies.lower():
+            DisplayData.image2D(image_y, z, x, 'Talbot carpet', result.io.filedir, 'carpet',
+                                False, True)
+            DisplayData.image2D(image_y_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_n',
+                                False, True)
         dependencies[result.dependencies.lower()] = {'z': z,
                                                      'x': x,
                                                      'image_x': image_x,
