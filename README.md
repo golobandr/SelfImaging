@@ -37,7 +37,7 @@ The source code files are further described below.
   * `is_ok` used to mark out that all mandatory data present (`boolean`)  
   * `message` field used to store error message, must be empty at start of calculation (`string`)  
   * `grating` structure contains following fields  
-    * `slit`: $~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$ grating slit description (`string` with three mandatory words) <br /> $~~$ 1. grating form factor: $~~~~~$ `1D` or `2D` <br /> $~~$ 2. grating transmission: $~~$ `amplitude` or `phase` <br /> $~~$ 3. pit structure: $~~~~~~~~~~~~~~~$ `square` - binary grating, <br /> $~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$ `cos` - cosine-like grating, <br /> $~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$ `lens` - used to simulate Shack-Hartmann wavefront sensor 
+    * `slit`: $~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$ grating slit description (`string` with three mandatory words) <br /> $~~~$ - grating form factor: $~~~~~$ `1D` or `2D` <br /> $~~~$ - grating transmission: $~~$ `amplitude` or `phase` <br /> $~~~$ - pit structure: $~~~~~~~~~~~~~~~$ `square` - binary grating, <br /> $~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$ `cos` - cosine-like grating, <br /> $~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$ `lens` - used to simulate Shack-Hartmann wavefront sensor 
     * `period`:  $~~~~~~~~~~~~~~~~~~~~~~~~~~~$ period of the grating (`number`)  
     * `duty_factor`:  $~~~~~~~~~~~~~~~~~~~$ grating duty factor (`number`)
     * `depth`:  $~~~~~~~~~~~~~~~~~~~~~~~~~~~~~$ slit depth to be used for _phase_ grating (`number`)  
