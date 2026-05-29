@@ -77,7 +77,6 @@ class Io:
     workdir = None
     filename = 0
     outputfile = None
-    spectrum = None
 
 
 class CopyData:
