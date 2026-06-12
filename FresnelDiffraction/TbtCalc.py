@@ -76,7 +76,7 @@ if __name__ == "__main__":
             del result
 
         init_end_time = datetime.datetime.now()
-        log_str = f'Calculation finish time: {init_end_time.strftime("%Y/%m/%d %H:%M:%S")}'
+        log_str += f'Calculation finish time: {init_end_time.strftime("%Y/%m/%d %H:%M:%S")}'
         f = open(os.path.join(wd, 'result.log'), 'w')
         f.write(log_str)
         f.close()
