@@ -31,21 +31,21 @@ def fromDatLine(result):
     for idx in range(len(result.data)):
         ws.append([printoutCellData(result.data[idx].is_ok), result.data[idx].start,
                    result.data[idx].end, result.data[idx].message])
-    # if result.is_ok and 'distance' in result.dependencies:
-    #     col_names = ['', 'z, mm']
-    #     for idx in range(len(result.data)):
-    #         col_names.append(result.data[idx].psd.distance)
-    #     if 'Distance' in wb.sheetnames:
-    #         ws = wb.active
-    #     else:
-    #         ws = wb.create_sheet('Distance')
-    #     ws.append(col_names)
-    #     ws.append(['x, mm'])
-    #     for i in range(len(result.data[0].psd.image.x.coordinate)):
-    #         data_to_save = [result.data[0].psd.image.x.coordinate[i], '']
-    #         for idx in range(len(result.data)):
-    #             data_to_save.append(result.data[idx].psd.image.x.intensity[i])
-    #         ws.append(data_to_save)
+    if result.is_ok and 'distance' in result.dependencies:
+        col_names = ['', 'z, mm']
+        for idx in range(len(result.data)):
+            col_names.append(result.data[idx].psd.distance)
+        if 'Distance' in wb.sheetnames:
+            ws = wb.active
+        else:
+            ws = wb.create_sheet('Distance')
+        ws.append(col_names)
+        ws.append(['x, mm'])
+        for i in range(len(result.data[0].psd.image.x.coordinate)):
+            data_to_save = [result.data[0].psd.image.x.coordinate[i], '']
+            for idx in range(len(result.data)):
+                data_to_save.append(result.data[idx].psd.image.x.intensity[i])
+            ws.append(data_to_save)
 
     for idx in range(len(result.data)):
         if result.data[idx].is_ok and result.data[idx].add.save:

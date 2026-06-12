@@ -67,7 +67,7 @@ def calculationError(error, n, ymin, wd, fn):
 def image2D(image, x, y, title_str, wd, fn, is_d, is_s):
     image = image / image.max()
     plt.figure(figsize=(8, 8), dpi=300)
-    plt.imshow(image, extent=(x.min(), x.max(), y.min(), y.max()), cmap='jet',
+    plt.imshow(image, extent=(x.min(), x.max(), y.min(), y.max()), cmap='hot',
                interpolation='nearest', origin='lower', aspect='auto')
     plt.colorbar()
     plt.title(title_str)
@@ -77,4 +77,4 @@ def image2D(image, x, y, title_str, wd, fn, is_d, is_s):
         image = (image * 255).astype(np.uint8)
         Image.fromarray(image).save(os.path.join(wd, fn + '.bmp'), 'BMP')
     elif is_s:
-        plt.imsave(os.path.join(str(wd), fn + '.png'), image, cmap='jet')
+        plt.imsave(os.path.join(str(wd), fn + '.png'), image, cmap='hot')

@@ -29,7 +29,8 @@ if __name__ == "__main__":
             if file.endswith(".xls") or file.endswith(".xlsx"):
                 filenames.append(os.path.join(dn, file))
 
-    log_str = (f'Calculation start time: {datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")}\n'
+    init_st_time = datetime.datetime.now()
+    log_str = (f'Calculation start time: {init_st_time.strftime("%Y/%m/%d %H:%M:%S")}\n'
                f'System parameters:\n'
                f'  OS:        {platform.system()} ({platform.platform()})\n'
                f'  Processor: {platform.processor()} ({os.cpu_count()} cores)\n\n')
@@ -46,9 +47,11 @@ if __name__ == "__main__":
             st_time = datetime.datetime.now()
             print(data.text.BOLD + f'File #{index}: calculation started at '
                                    f'{st_time.strftime("%Y/%m/%d %H:%M:%S")}\n' + data.text.END)
-            log_str += f'File #{index}: calculation started at {st_time.strftime("%Y/%m/%d %H:%M:%S")}\n'
+            log_str += f'Calculation started at {st_time.strftime("%Y/%m/%d %H:%M:%S")}\n'
             [is_ok, result] = ReadData.fromFile(wd, filename)
             if not is_ok:
+                log_str += f'Calculation skipped: {result.message}\n\n'
+                del result
                 continue
             result = ProcessData.fromStructure(result)
             print(f'\n  Data visualization and saving started at '
@@ -62,15 +65,18 @@ if __name__ == "__main__":
             end_time = datetime.datetime.now()
             print(data.text.BOLD + f'File #{index}: calculation finished at '
                                    f'{end_time.strftime("%Y/%m/%d %H:%M:%S")}' + data.text.END)
-            log_str += f'File #{index}: calculation finished at {st_time.strftime("%Y/%m/%d %H:%M:%S")}\n'
+            log_str += f'Calculation finished at {end_time.strftime("%Y/%m/%d %H:%M:%S")}\n'
             calc_time = end_time - st_time
             print(data.text.BOLD + f'File #{index}: calculation time is '
                                    f'{calc_time}' + data.text.END)
-            log_str += f'File #{index}: calculation time is {calc_time}\n\n'
+            log_str += f'Calculation time is {calc_time}\n\n'
             f = open(os.path.join(result.io.filedir, 'result.dat'), 'wb')
             pickle.dump(result, f, 2)
             f.close()
             del result
+
+        init_end_time = datetime.datetime.now()
+        log_str = f'Calculation finish time: {init_end_time.strftime("%Y/%m/%d %H:%M:%S")}'
         f = open(os.path.join(wd, 'result.log'), 'w')
         f.write(log_str)
         f.close()

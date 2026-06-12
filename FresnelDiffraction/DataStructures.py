@@ -12,6 +12,8 @@ class Beam:
     band = None
     aberration = None
     coefficients = None
+    pulse_time = 0
+    chirp = 0
 
 
 class Grating:
@@ -38,7 +40,7 @@ class Distribution:
 
 class Spectrum:
     wavelength = None
-    intensity = None
+    amplitude = None
 
 
 class Distribution2D:

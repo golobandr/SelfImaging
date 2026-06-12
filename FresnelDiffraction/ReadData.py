@@ -67,6 +67,16 @@ def createStructures(filename):
             beam.intensity = float(data_in[0][2])
         if beam.intensity < 0:
             return [False, beam, 'beam intensity must be greater than 0']
+        if len(data_in[0]) < 4:
+            return [True, beam, message]
+        if not math.isnan(data_in[0][3]):
+            if data_in[0][3] <= 0:
+                return [False, beam, 'beam pulse time must be greater than 0 or empty for continuous illumination']
+            beam.pulse_time = 1 / float(data_in[0][3]) * 1E12
+        if len(data_in[0]) < 5:
+            return [True, beam, message]
+        if not math.isnan(data_in[0][4]):
+            beam.chirp = float(data_in[0][4])
         return [True, beam, message]
 
     def parseGrating(data_in, wavelength):
