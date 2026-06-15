@@ -3,9 +3,6 @@ import datetime
 from tkinter import Tk
 from tkinter.filedialog import askopenfilenames
 import pickle
-
-from sympy.codegen.cfunctions import isnan
-
 import ProcessData
 import ReadData
 import DataStructures as data

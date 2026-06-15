@@ -151,6 +151,28 @@ def createStructures(filename):
             psd.div_factor = 1
         if psd.div_factor < 1:
             return [False, psd, 'psd div factor must be greater than 1']
+        if len(data_in) < 5:
+            return [True, psd, '']
+        psd.time = round(data_in[4])
+        if math.isnan(psd.time):
+            psd.time = 0
+        if psd.time < 0:
+            return [False, psd, 'time must be greater than 0']
+        if len(data_in) < 6:
+            if psd.time != 0:
+                psd.time_step = psd.time / 100
+                return [True, psd, 'time step is not stated, default time step is used: t/100']
+            return [True, psd, '']
+        psd.time_step = round(data_in[5])
+        if math.isnan(psd.time_step):
+            if psd.time != 0:
+                psd.time_step = psd.time / 100
+                return [True, psd, 'time step is not stated, default time step is used: t/100']
+            psd.time_step = 0
+        if psd.time_step < 0:
+            return [False, psd, 'time step must be greater than 0']
+        if psd.time_step > psd.time and psd.time != 0:
+            return [True, psd, 'time step greater than time, default time step is used: t/100']
         return [True, psd, '']
 
     def parseAdd(data_in):

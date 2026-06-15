@@ -64,6 +64,8 @@ class Psd:
     step = None
     div_factor = 1
     image = None
+    time = 0
+    timestep = 0
 
 
 class Add:
