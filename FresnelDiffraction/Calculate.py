@@ -5,16 +5,18 @@ import statistics
 import scipy
 
 width_init = 300
+const_lightspeed = 299_792_458_000  # in mm/s
 
 
 def beambandSpectrumIntensities(beam):
     beam_band = data.Spectrum()
     if beam.bandwidth == 0 and beam.pulse_time == 0:
-        beam_band.wavelength = beam.wavelength
-        beam_band.amplitude = 1
+        beam_band.wavelength = beam.wavelength * np.ones(1)
+        beam_band.amplitude = np.ones(1)
+        beam_band.delta = beam.wavelength
     else:
         delta_wl = beam.wavelength / 100
-        const_lightspeed = 299_792_458_000  # in mm/s
+        beam_band.delta = delta_wl
         d_omega = max(beam.bandwidth,
                       beam.wavelength * beam.pulse_time / const_lightspeed * math.sqrt(1 + beam.chirp ** 2))
         wls_less = np.arange(beam.wavelength, beam.wavelength / (1 + 3 * d_omega) - delta_wl, -delta_wl)
@@ -162,7 +164,7 @@ def gratingCoefficients(grating, wl, accuracy):
             else:
                 pd = (grating.index[0] + grating.index[1] * wavelength - 1) * grating.depth / wavelength
             grating.phase_depth = 2 * math.pi * pd
-            opt_coeff.append([grating.phase_depth, setCoefficientsForWL(grating)])
+            opt_coeff.append(setCoefficientsForWL(grating))
         return opt_coeff
 
 
@@ -181,11 +183,18 @@ def outputDistribution(grating, beam, psd):
         return u
 
     def averagePixel(intensity, x, sd):
-        distribution = data.Distribution()
+        if intensity.shape == x.shape:
+            distribution = data.Distribution()
+            int_out = np.zeros(len(x))
+            for i in range(len(x)):
+                int_out[i] = statistics.mean(intensity[i * sd:(i + 1) * sd])
+        else:
+            distribution = data.TimeDistribution()
+            int_out = np.zeros((len(x), intensity.shape[1]))
+            for j in range(intensity.shape[1]):
+                for i in range(len(x)):
+                    int_out[i, j] = statistics.mean(intensity[i * sd:(i + 1) * sd, j])
         distribution.coordinate = x
-        int_out = np.zeros(len(x))
-        for i in range(len(x)):
-            int_out[i] = statistics.mean(intensity[i * sd:(i + 1) * sd])
         distribution.intensity = int_out
         return distribution
 
@@ -207,59 +216,74 @@ def outputDistribution(grating, beam, psd):
         return u
 
     def spectralDiffraction1D(bba, n, cn, m, am, wl, angle, waist, wfc, a, distance, x):
-        swl = np.sqrt(2 * math.pi / complex(2 * math.pi * (1 + distance * wfc), wl * distance * waist ** 2))
+        swl = np.exp(1j * 2 * math.pi * distance / wl) * \
+              np.sqrt(2 * math.pi / (2 * math.pi * (1 + distance * wfc) + 1j * wl * distance * waist ** 2))
         if distance == 0:
             u = swl * bba * diffraction1DAtZeroDistance(n, cn, waist, a, x)
         else:
             u = swl * bba * diffraction1D(n, cn, m, am, wl, angle, waist, wfc, a, distance, x)
-        return np.abs(u) ** 2
+        return u
 
     pts = round(psd.aperture // psd.step) + 1
     psd.aperture = psd.step * pts
     x = np.linspace(-psd.aperture / 2, psd.aperture / 2, round(pts * psd.div_factor))
-    if beam.bandwidth == 0:
-        intensity_x = spectralDiffraction1D(1, grating.coefficients.x.n, grating.coefficients.x.cn,
-                                            beam.coefficients.x.n, beam.coefficients.x.cn, beam.wavelength,
-                                            beam.angle.x, beam.waist.x, beam.curvature.x, beam.aperture.x,
-                                            psd.distance, x)
-        intensity_y = spectralDiffraction1D(1, grating.coefficients.y.n, grating.coefficients.y.cn,
-                                            beam.coefficients.y.n, beam.coefficients.y.cn, beam.wavelength,
-                                            beam.angle.y, beam.waist.y, beam.curvature.y, beam.aperture.y,
-                                            psd.distance, x)
+    intensity_x = np.zeros(len(x))
+    intensity_y = np.zeros(len(x))
+    if type([]) != type(grating.coefficients):
+        nx, cnx = grating.coefficients.x.n, grating.coefficients.x.cn
+        ny, cny = grating.coefficients.y.n, grating.coefficients.y.cn
     else:
-        intensity_x = np.zeros(len(x))
-        intensity_y = np.zeros(len(x))
+        nx, cnx = grating.coefficients[0].x.n, grating.coefficients[0].x.cn
+        ny, cny = grating.coefficients[0].y.n, grating.coefficients[0].y.cn
+    if psd.time != 0:
+        amplitude_x = np.zeros((len(x), len(beam.band.wavelength)), dtype=complex)
+        amplitude_y = np.zeros((len(x), len(beam.band.wavelength)), dtype=complex)
+    else:
+        amplitude_x = 0
+        amplitude_y = 0
+    for i in range(len(beam.band.wavelength)):
         if type([]) == type(grating.coefficients):
-            for i in range(len(beam.band.wavelength)):
-                intensity_x += \
-                    spectralDiffraction1D(beam.band.amplitude[i],
-                                          grating.coefficients[i][1].x.n, grating.coefficients[i][1].x.cn,
-                                          beam.coefficients.x.n, beam.coefficients.x.cn, beam.band.wavelength[i],
-                                          beam.angle.x, beam.waist.x, beam.curvature.x, beam.aperture.x,
-                                          psd.distance, x)
-                intensity_y += \
-                    spectralDiffraction1D(beam.band.amplitude[i],
-                                          grating.coefficients[i][1].y.n, grating.coefficients[i][1].y.cn,
-                                          beam.coefficients.y.n, beam.coefficients.y.cn, beam.band.wavelength[i],
-                                          beam.angle.y, beam.waist.x, beam.curvature.y, beam.aperture.y,
-                                          psd.distance, x)
-        else:
-            for i in range(len(beam.band.wavelength)):
-                intensity_x += \
-                    spectralDiffraction1D(beam.band.amplitude[i],
-                                          grating.coefficients.x.n, grating.coefficients.x.cn,
-                                          beam.coefficients.x.n, beam.coefficients.x.cn, beam.band.wavelength[i],
-                                          beam.angle.x, beam.waist.x, beam.curvature.x, beam.aperture.x,
-                                          psd.distance, x)
-                intensity_y += \
-                    spectralDiffraction1D(beam.band.amplitude[i],
-                                          grating.coefficients.y.n, grating.coefficients.y.cn,
-                                          beam.coefficients.y.n, beam.coefficients.y.cn, beam.band.wavelength[i],
-                                          beam.angle.y, beam.waist.x, beam.curvature.y, beam.aperture.y,
-                                          psd.distance, x)
-
+            nx, cnx = grating.coefficients[i].x.n, grating.coefficients[i].x.cn
+            ny, cny = grating.coefficients[i].y.n, grating.coefficients[i].y.cn
+        ax = spectralDiffraction1D(beam.band.amplitude[i], nx, cnx, beam.coefficients.x.n, beam.coefficients.x.cn,
+                                   beam.band.wavelength[i], beam.angle.x, beam.waist.x, beam.curvature.x,
+                                   beam.aperture.x, psd.distance, x)
+        ay = spectralDiffraction1D(beam.band.amplitude[i], ny, cny, beam.coefficients.y.n, beam.coefficients.y.cn,
+                                   beam.band.wavelength[i], beam.angle.y, beam.waist.x, beam.curvature.y,
+                                   beam.aperture.y, psd.distance, x)
+        intensity_x += np.abs(ax) ** 2
+        intensity_y += np.abs(ay) ** 2
+        if psd.time != 0:
+            amplitude_x[:, i] = ax[:]
+            amplitude_y[:, i] = ay[:]
+    if psd.time != 0:
+        time = np.arange(0, psd.time, psd.time_step)
+        utx = np.zeros((len(x), len(time)), dtype=complex)
+        uty = np.zeros((len(x), len(time)), dtype=complex)
+        omega = 2 * math.pi * const_lightspeed / beam.band.wavelength
+        for j in range(len(time)):
+            for i in range(len(omega)):
+                exp_wt = np.exp(-1j * omega[i] * time[j])
+                utx[:, j] += exp_wt * amplitude_x[:, i]
+                uty[:, j] += exp_wt * amplitude_y[:, i]
+        itx = np.abs(utx) ** 2
+        ity = np.abs(uty) ** 2
+    else:
+        itx = 0
+        ity = 0
+        time = 0
     x = np.linspace(-psd.aperture / 2, psd.aperture / 2, pts)
-    intensity = data.Distribution2D()
+    if psd.time != 0:
+        intensity = data.Distribution2DTime()
+    else:
+        intensity = data.Distribution2D()
     intensity.x = averagePixel(intensity_x, x, round(psd.div_factor))
     intensity.y = averagePixel(intensity_y, x, round(psd.div_factor))
+    if psd.time != 0:
+        i = data.Distribution2D()
+        i.x = averagePixel(itx, x, round(psd.div_factor))
+        i.x.time = time
+        i.y = averagePixel(ity, x, round(psd.div_factor))
+        i.y.time = time
+        intensity.t = i
     return intensity

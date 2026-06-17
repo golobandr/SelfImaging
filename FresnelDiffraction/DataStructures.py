@@ -38,14 +38,27 @@ class Distribution:
     intensity = None
 
 
+class TimeDistribution:
+    time = None
+    coordinate = None
+    intensity = None
+
+
 class Spectrum:
     wavelength = None
     amplitude = None
+    delta = None
 
 
 class Distribution2D:
     x = None
     y = None
+
+
+class Distribution2DTime:
+    x = None
+    y = None
+    t = None
 
 
 class XYData:

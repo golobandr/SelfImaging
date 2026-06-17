@@ -71,6 +71,8 @@ def dependencies(result):
                                  'data': i_error}
     if result.is_ok and (result.dependencies != '') and len(result.data) > 2:
         z = np.arange(len(result.data), dtype=float)
+        if 'time' in result.dependencies.lower():
+            pass
         x = result.data[0].psd.image.x.coordinate
         image_x = np.zeros((len(x), len(result.data)))
         image_y = np.zeros((len(x), len(result.data)))
