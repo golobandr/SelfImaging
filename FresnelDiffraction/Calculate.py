@@ -37,7 +37,7 @@ def beambandSpectrumIntensities(beam):
             amplitude = np.ones(len(wls))
         if beam.bandwidth != 0:
             amplitude *= np.exp(-((beam.wavelength / wls - 1) / beam.bandwidth) ** 2 / 2)
-        intensity = amplitude ** 2
+        intensity = np.abs(amplitude )** 2
         beam_band.amplitude = amplitude / math.sqrt(sum(intensity))
     return beam_band
 

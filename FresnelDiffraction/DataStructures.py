@@ -45,8 +45,8 @@ class TimeDistribution:
 
 
 class Spectrum:
-    wavelength = None
-    amplitude = None
+    wavelength = np.ones(1)
+    amplitude = np.ones(1, dtype=complex)
     delta = None
 
 

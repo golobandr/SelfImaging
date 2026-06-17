@@ -71,8 +71,6 @@ def dependencies(result):
                                  'data': i_error}
     if result.is_ok and (result.dependencies != '') and len(result.data) > 2:
         z = np.arange(len(result.data), dtype=float)
-        if 'time' in result.dependencies.lower():
-            pass
         x = result.data[0].psd.image.x.coordinate
         image_x = np.zeros((len(x), len(result.data)))
         image_y = np.zeros((len(x), len(result.data)))
@@ -130,6 +128,19 @@ def dependencies(result):
                                 False, True)
             DisplayData.image2D(image_y_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_n',
                                 False, True)
+        if 'time' in result.dependencies.lower():
+            t = result.data[0].psd.image.t.x.time
+            image_x_time = np.zeros((len(t), len(result.data)))
+            image_y_time = np.zeros((len(t), len(result.data)))
+            for i in range(len(result.data)):
+                for j in range(len(t)):
+                    image_x_time[j, i] = np.sum(result.data[i].psd.image.t.x.intensity[:, j])
+                    image_y_time[j, i] = np.sum(result.data[i].psd.image.t.y.intensity[:, j])
+            DisplayData.image2D(image_x_time, z, t, 'Talbot carpet', result.io.filedir, 'carpet_x_t',
+                                False, True)
+            DisplayData.image2D(image_y_time, z, t, 'Talbot carpet', result.io.filedir, 'carpet_y_t',
+                                False, True)
+
         dependencies[result.dependencies.lower()] = {'z': z,
                                                      'x': x,
                                                      'image_x': image_x,
