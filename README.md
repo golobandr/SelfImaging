@@ -7,9 +7,11 @@ This is a standalone Python simulator for Fresnel/Talbot-style self-imaging: it 
 
 The source code folder `FresnelDiffraction` consists of a collection of python files (`*.py`-files), an accompanying input data files (provided as `.xlsx` files) are in `input_examples` folder.
 
-The source code files are further described below. 
+The source code files are further described below. To set up a simulation, an input `TbtCalc` script must be started which allows to enter input data either via GUI or from `data_inputs` folder if it in the same folder with `TbtCalc` script. The input parameters are read from the “Grating”, “Beam”, “Beam.X”, “Beam.Y”, “Psd”, “Add” and "Dependencies" tabs of the Excel file and are organized structlike columns on the basis of `OutputData` structure. At the start of program execution, the input data file `<filename>.xlsx` is copied into the otput folder where calculation result will be saved as `result.dat` file also.
 
-### Scripts of core functionalities located in the `FresnelDiffraction` folder: 
+Example of Excel spreadsheets are given in `input_examples` folder.
+
+## Scripts of core functionalities located in the `FresnelDiffraction` folder: 
 
 - `TbtCalc.py`: main script, that provides core functionality steps: data reading, calculation, visualization and saving output data.  
   - `DataStructures.py`: support file, where all data structures are described.
@@ -28,7 +30,9 @@ The source code files are further described below.
 
 Excel workbooks define one or more simulation data lines, including grating, beam, PSD, and calculation controls. `FresnelDiffraction/ReadData.py` parses those sheets into structured simulation inputs defined in `FresnelDiffraction/DataStructures.py`. Example experiment definitions are `input_examples/distanceDependency_cos_amp.xlsx` and `input_examples/distanceDependency_square_amp.xlsx`.
 The central output model carries validation state, messages, copied/common parameters, per-line results, timing, output locations, and visualization dependencies.
-**Structure description `OutputData`:**  
+
+#### Structure description `OutputData`:
+
 * `is_ok` used to mark out that all mandatory data present (`boolean`)  
 * `message` field used to store error message, must be empty at start of calculation (`string`)  
 * `io` structure contains following fields  
@@ -109,15 +113,8 @@ The runtime is local Python with filesystem access and Excel workbook input; no 
 
 Included Python scripts do not require any installation, just copy to the working folder.
 
+## Example of input data files located in the `input_examples` folder: 
 
-### Program execution
-
-To set up a simulation, an input `TbtCalc` script must be started which allows to enter input data via GUI. The execution is started in automatic regime if folder `data_inputs` is in `FresnelDiffraction` folder. The input parameters are read from the “Grating”, “Beam”, “Beam.X”, “Beam.Y”, “Psd”, “Add” and "Dependencies" tabs of the Excel file and are organized structlike columns on the basis of `OutputData` structure. At the start of program execution, the input data file `<filename>.xlsx` is copied into the otput folder where calculation result will be saved as `result.dat` file also.
-
-
-### Example of input data files
-
-`input_examples\1.xlsx`: Basic file used to estimate division parameter sys.dsdp  
-`input_examples\2.xlsx`: Files used to simulate grating to sample distance effect on the far-field patterns  
-`input_examples\3.xlsx`: Files used to simulate pump to probe ratio effect on far-field patterns formation
+`distanceDependency_cos_amp.xlsx`: Basic file used to simulate distance dependency for cosine-like amplitude grating  
+`distanceDependency_square_amp.xlsx`: File used to simulate grating to sample distance effect for binary amplitude grating 
 
