@@ -1,6 +1,6 @@
-
 # Self Imaging
 TbtCalc is a Python script for simulating grating diffraction by grating.
+This is a standalone Python simulator for Fresnel/Talbot-style self-imaging: it models diffraction from 1D/2D amplitude or phase gratings onto a position-sensitive detector (PSD). The interactive/batch entry point is `FresnelDiffraction/TbtCalc.py`, which orchestrates input acquisition, computation, visualization, and persistence.
 
 
 ## Description of files/directory structure 
@@ -8,6 +8,10 @@ TbtCalc is a Python script for simulating grating diffraction by grating.
 The source code folder `FresnelDiffraction` consists of a collection of python files (`*.py`-files), an accompanying input data files (provided as `.xlsx` files) are in `input_examples` folder.
 
 The source code files are further described below. 
+
+### General program structure
+
+<img src="img/diagram.png" alt="" style="display: inline-block; height: auto; width: auto; vertical-align: text-bottom; margin: 0 0.25rem;" />
 
 ### Scripts of core functionalities located in the `FresnelDiffraction` folder: 
 
@@ -20,6 +24,10 @@ The source code files are further described below.
   - `DisplayData.py`: support file, where all data used graphs are described.
 - `SaveData.py`: python function, used for output data saving. Note, output structure is dumped in `result.dat` separately within main program `TbtCalc.py`. 
 
+### Input and Data Model
+
+Excel workbooks define one or more simulation data lines, including grating, beam, PSD, and calculation controls. `FresnelDiffraction/ReadData.py` parses those sheets into structured simulation inputs defined in `FresnelDiffraction/DataStructures.py`. Example experiment definitions are `input_examples/distanceDependency_cos_amp.xlsx` and `input_examples/distanceDependency_square_amp.xlsx`.
+The central output model carries validation state, messages, copied/common parameters, per-line results, timing, output locations, and visualization dependencies.
 **Structure description `OutputData`:**  
 * `is_ok` used to mark out that all mandatory data present (`boolean`)  
 * `message` field used to store error message, must be empty at start of calculation (`string`)  
@@ -74,6 +82,28 @@ The source code files are further described below.
   * `start` calculation start time (`None`)
   * `end` calculation finish time (`None`)
 * `dependencies` list of dependencies for visualization (`boolean`)
+
+### Simulation Preparation
+
+`FresnelDiffraction/ProcessData.py` is the reusable processing API (`ProcessData.fromStructure(input)`) and validation/preparation boundary. It accepts populated structures rather than directly depending on Excel, allowing callers other than the main script. It derives calculation-ready grating and beam properties, including phase depth and Fourier-related coefficients, using `FresnelDiffraction/Calculate.py`.
+
+### Diffraction Computation
+
+The computation stage processes each independent input data line, modeling grating transmission, incident beam properties, propagation distance, sampling aperture/step, and detector averaging (`div_factor`). Supported grating definitions include 1D/2D, amplitude/phase, square/cosine/lens structures. Core numerical logic is split between `FresnelDiffraction/ProcessData.py` and `FresnelDiffraction/Calculate.py`.
+
+### Parallel Execution Boundary
+
+Processing is explicitly parallelized across available system CPU cores. Input structures are arranged so each data line contains the parameters required for independent execution; this is the primary concurrency boundary in `FresnelDiffraction/ProcessData.py`. Cross-line common beam, beam-band, and grating values can be represented as copied/shared output metadata rather than requiring coupled calculation.
+
+### Visualization and Output
+
+`FresnelDiffraction/VisualizeData.py` converts computed result structures into figures, with graph/display definitions centralized in `FresnelDiffraction/DisplayData.py`. Visualization is downstream of numerical processing and can be controlled per input line through save/debug options.
+
+`FresnelDiffraction/SaveData.py` persists generated outputs. The orchestrator also writes the full result structure as `result.dat`; the source workbook is copied into the run output directory. File and working-directory metadata are retained in the result model.
+
+### Runtime and External Dependencies
+
+The runtime is local Python with filesystem access and Excel workbook input; no server, database, or cloud service is indicated. Material external requirements are spreadsheet-reading support, numerical/Fourier computation, CPU multiprocessing, plotting/display support, and binary/object serialization for `result.dat`.
 
 ### Installation instructions 
 
