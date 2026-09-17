@@ -9,10 +9,6 @@ The source code folder `FresnelDiffraction` consists of a collection of python f
 
 The source code files are further described below. 
 
-### General program structure
-
-<img src="img/diagram.png" alt="" style="display: inline-block; height: auto; width: auto; vertical-align: text-bottom; margin: 0 0.25rem;" />
-
 ### Scripts of core functionalities located in the `FresnelDiffraction` folder: 
 
 - `TbtCalc.py`: main script, that provides core functionality steps: data reading, calculation, visualization and saving output data.  
@@ -23,6 +19,10 @@ The source code files are further described below.
 - `VisualizeData.py`: python function, used for output data visualization.  
   - `DisplayData.py`: support file, where all data used graphs are described.
 - `SaveData.py`: python function, used for output data saving. Note, output structure is dumped in `result.dat` separately within main program `TbtCalc.py`. 
+
+#### General program structure
+
+<img src="img/diagram.png" alt="" style="display: inline-block; height: auto; width: auto; vertical-align: text-bottom; margin: 0 0.25rem;" />
 
 ### Input and Data Model
 
