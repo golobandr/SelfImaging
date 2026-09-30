@@ -58,23 +58,23 @@ def calculationError(error, n, ymin, wd, fn):
     plt.ylabel('Error, a.u.')
     plt.yscale('log')
     plt.grid(True)
-    plt.xlim([min(n), max(n)])
-    plt.ylim([ymin, 1])
+    plt.xlim((min(n), max(n)))
+    plt.ylim((ymin, 1))
     plt.savefig(os.path.join(wd, fn))
     plt.close()
 
 
 def image2D(image, x, y, title_str, wd, fn, is_d, is_s):
     image = image / image.max()
-    plt.figure(figsize=(8, 8), dpi=300)
-    plt.imshow(image, extent=(x.min(), x.max(), y.min(), y.max()), cmap='hot',
+    plt.figure(figsize=(8, 8), dpi=600)
+    plt.imshow(image, extent=(x.min(), x.max(), y.min(), y.max()), cmap='jet',
                interpolation='nearest', origin='lower', aspect='auto')
     plt.colorbar()
-    plt.title(title_str)
-    plt.savefig(os.path.join(wd, 'scaled_' + fn + '.png'))
+    # plt.title(title_str)
+    plt.savefig(os.path.join(wd, 'scaled_' + fn + '.png'), dpi=600)
     plt.close()
     if is_d and is_s:
         image = (image * 255).astype(np.uint8)
         Image.fromarray(image).save(os.path.join(wd, fn + '.bmp'), 'BMP')
     elif is_s:
-        plt.imsave(os.path.join(str(wd), fn + '.png'), image, cmap='hot')
+        plt.imsave(os.path.join(str(wd), fn + '.png'), image, cmap='jet')

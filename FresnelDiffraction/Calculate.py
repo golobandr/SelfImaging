@@ -37,7 +37,7 @@ def beambandSpectrumIntensities(beam):
             amplitude = np.ones(len(wls))
         if beam.bandwidth != 0:
             amplitude *= np.exp(-((beam.wavelength / wls - 1) / beam.bandwidth) ** 2 / 2)
-        intensity = np.abs(amplitude )** 2
+        intensity = np.abs(amplitude) ** 2
         beam_band.amplitude = amplitude / math.sqrt(sum(intensity))
     return beam_band
 
@@ -241,15 +241,26 @@ def outputDistribution(grating, beam, psd):
     else:
         amplitude_x = 0
         amplitude_y = 0
+    curvature = data.Distribution2D()
+    if beam.curvature_indexes[1] != 0:
+        curvature.x = beam.curvature.x * (
+                (beam.curvature_indexes[0] + beam.curvature_indexes[1] * beam.wavelength - 1) /
+                (beam.curvature_indexes[0] + beam.curvature_indexes[1] * beam.band.wavelength - 1))
+        curvature.y = beam.curvature.y * (
+                (beam.curvature_indexes[0] + beam.curvature_indexes[1] * beam.wavelength - 1) /
+                (beam.curvature_indexes[0] + beam.curvature_indexes[1] * beam.band.wavelength - 1))
+    else:
+        curvature.x = beam.curvature.x * np.ones(len(beam.band.wavelength))
+        curvature.y = beam.curvature.y * np.ones(len(beam.band.wavelength))
     for i in range(len(beam.band.wavelength)):
         if type([]) == type(grating.coefficients):
             nx, cnx = grating.coefficients[i].x.n, grating.coefficients[i].x.cn
             ny, cny = grating.coefficients[i].y.n, grating.coefficients[i].y.cn
         ax = spectralDiffraction1D(beam.band.amplitude[i], nx, cnx, beam.coefficients.x.n, beam.coefficients.x.cn,
-                                   beam.band.wavelength[i], beam.angle.x, beam.waist.x, beam.curvature.x,
+                                   beam.band.wavelength[i], beam.angle.x, beam.waist.x, curvature.x[i],
                                    beam.aperture.x, psd.distance, x)
         ay = spectralDiffraction1D(beam.band.amplitude[i], ny, cny, beam.coefficients.y.n, beam.coefficients.y.cn,
-                                   beam.band.wavelength[i], beam.angle.y, beam.waist.x, beam.curvature.y,
+                                   beam.band.wavelength[i], beam.angle.y, beam.waist.x, curvature.y[i],
                                    beam.aperture.y, psd.distance, x)
         intensity_x += np.abs(ax) ** 2
         intensity_y += np.abs(ay) ** 2

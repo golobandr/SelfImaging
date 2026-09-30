@@ -41,7 +41,7 @@ def fromStructure(ipt):
     if ipt.copy_beam_band:
         ipt.copy_data.beamband = Calculate.beambandSpectrumIntensities(ipt.data[0].beam)
     if ipt.copy_grating:
-        ipt.copy_data.grating = Calculate.gratingCoefficients(ipt.data[0].grating, ipt.copy_data.beamband.wavelength,
+        ipt.copy_data.grating = Calculate.gratingCoefficients(ipt.data[0].grating, ipt.data[0].beam.wavelength,
                                                               ipt.data[0].add.accuracy)
     if ipt.copy_beam:
         ipt.copy_data.beam = Calculate.beamCoefficients(ipt.data[0].beam, ipt.data[0].add.accuracy)

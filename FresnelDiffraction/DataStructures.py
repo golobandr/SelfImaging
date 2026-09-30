@@ -14,6 +14,7 @@ class Beam:
     coefficients = None
     pulse_time = 0
     chirp = 0
+    curvature_indexes = None
 
 
 class Grating:
@@ -44,15 +45,15 @@ class TimeDistribution:
     intensity = None
 
 
+class Distribution2D:
+    x = None
+    y = None
+
+
 class Spectrum:
     wavelength = np.ones(1)
     amplitude = np.ones(1, dtype=complex)
     delta = None
-
-
-class Distribution2D:
-    x = None
-    y = None
 
 
 class Distribution2DTime:

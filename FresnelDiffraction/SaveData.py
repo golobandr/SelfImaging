@@ -53,8 +53,8 @@ def fromDatLine(result):
                 col_names = ['x frequencies', 'x spectrum, urb.un.', 'y frequencies', 'y spectrum, urb.un.',
                              'x, mm', 'x intensities, urb.un.', 'y, mm', 'y intensities, urb.un.', ]
                 col_widths = [15, 21, 15, 21, 12, 25, 12, 25]
-                rows = max([len(result.data[idx].grating.coefficients.x.n),
-                            len(result.data[idx].grating.coefficients.y.n),
+                rows = max([len(result.data[idx].grating.coefficients[0].x.n),
+                            len(result.data[idx].grating.coefficients[0].y.n),
                             len(result.data[idx].psd.image.x.coordinate),
                             len(result.data[idx].psd.image.y.coordinate)])
             else:
@@ -72,15 +72,15 @@ def fromDatLine(result):
             for i in range(rows):
                 data_to_save = []
                 if result.data[idx].add.debug:
-                    if len(result.data[idx].grating.coefficients.x.n) > i:
-                        data_to_save.append(result.data[idx].grating.coefficients.x.n[i])
-                        data_to_save.append(result.data[idx].grating.coefficients.x.sn[i])
+                    if len(result.data[idx].grating.coefficients[0].x.n) > i:
+                        data_to_save.append(result.data[idx].grating.coefficients[0].x.n[i])
+                        data_to_save.append(result.data[idx].grating.coefficients[0].x.sn[i])
                     else:
                         data_to_save.append('')
                         data_to_save.append('')
-                    if len(result.data[idx].grating.coefficients.y.n) > i:
-                        data_to_save.append(result.data[idx].grating.coefficients.y.n[i])
-                        data_to_save.append(result.data[idx].grating.coefficients.y.sn[i])
+                    if len(result.data[idx].grating.coefficients[0].y.n) > i:
+                        data_to_save.append(result.data[idx].grating.coefficients[0].y.n[i])
+                        data_to_save.append(result.data[idx].grating.coefficients[0].y.sn[i])
                     else:
                         data_to_save.append('')
                         data_to_save.append('')

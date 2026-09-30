@@ -35,16 +35,12 @@ def images(result):
                                         'WF', result.io.filedir, f'wf_image_{idx}',
                                         result.data[idx].add.debug, result.data[idx].add.save)
                 if result.data[idx].add.debug:
-                    DisplayData.twoSpectra(result.data[idx].grating.coefficients.x.n,
-                                           result.data[idx].grating.coefficients.x.sn, 'x',
-                                           result.data[idx].grating.coefficients.y.n,
-                                           result.data[idx].grating.coefficients.y.sn, 'y', result.io.filedir,
+                    DisplayData.twoSpectra(result.data[idx].grating.coefficients[0].x.n,
+                                           result.data[idx].grating.coefficients[0].x.sn, 'x',
+                                           result.data[idx].grating.coefficients[0].y.n,
+                                           result.data[idx].grating.coefficients[0].y.sn, 'y', result.io.filedir,
                                            f'grating_spectrum_{idx}.png')
-                    DisplayData.twoSpectra(result.data[idx].beam.coefficients.x.n,
-                                           result.data[idx].beam.coefficients.x.sn, 'x',
-                                           result.data[idx].beam.coefficients.y.n,
-                                           result.data[idx].beam.coefficients.y.sn, 'y', result.io.filedir,
-                                           f'beam_spectrum_{idx}.png')
+
                     DisplayData.intensities(result.data[idx].psd.image.x.coordinate,
                                             result.data[idx].psd.image.x.intensity /
                                             np.max(result.data[idx].psd.image.x.intensity), 'x',
@@ -128,7 +124,7 @@ def dependencies(result):
                                 False, True)
             DisplayData.image2D(image_y_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_n',
                                 False, True)
-        if 'time' in result.dependencies.lower():
+        if 'time' in result.dependencies.lower() and result.data[0].psd.time != 0:
             t = result.data[0].psd.image.t.x.time
             image_x_time = np.zeros((len(t), len(result.data)))
             image_y_time = np.zeros((len(t), len(result.data)))

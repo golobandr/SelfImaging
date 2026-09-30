@@ -77,6 +77,13 @@ def createStructures(filename):
             return [True, beam, message]
         if not math.isnan(data_in[0][4]):
             beam.chirp = float(data_in[0][4])
+        if len(data_in[0]) < 7:
+            return [True, beam, message]
+        beam.curvature_indexes = [1.5, 0]
+        if not math.isnan(data_in[0][5]):
+            beam.curvature_indexes[0] = float(data_in[0][5])
+        if not math.isnan(data_in[0][6]):
+            beam.curvature_indexes[1] = float(data_in[0][6])
         return [True, beam, message]
 
     def parseGrating(data_in, wavelength):
