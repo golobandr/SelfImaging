@@ -183,7 +183,7 @@ def outputDistribution(grating, beam, psd):
         return u
 
     def averagePixel(intensity, x, sd):
-        if intensity.shape == x.shape:
+        if len(intensity.shape) == len(x.shape):
             distribution = data.Distribution()
             int_out = np.zeros(len(x))
             for i in range(len(x)):
