@@ -65,7 +65,7 @@ def calculationError(error, n, ymin, wd, fn):
 
 
 def image2D(image, x, y, title_str, wd, fn, is_d, is_s):
-    image = image / image.max()
+    image = image / np.max(image)
     plt.figure(figsize=(8, 8), dpi=600)
     plt.imshow(image, extent=(x.min(), x.max(), y.min(), y.max()), cmap='jet',
                interpolation='nearest', origin='lower', aspect='auto')

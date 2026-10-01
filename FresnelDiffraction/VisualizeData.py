@@ -1,6 +1,7 @@
 import DataStructures as data
 import numpy as np
 import DisplayData
+from FresnelDiffraction.DataStructures import Beam
 
 
 def images(result):
@@ -23,23 +24,34 @@ def images(result):
                               result.data[idx].psd.image.x.coordinate ** 2 * result.data[idx].beam.curvature.x
                     phase_y = result.data[idx].psd.image.y.coordinate * np.sin(result.data[idx].beam.angle.y) + \
                               result.data[idx].psd.image.y.coordinate ** 2 * result.data[idx].beam.curvature.y
-                    phase_x /= np.max(phase_x)
-                    phase_y /= np.max(phase_y)
+                    phase_x -= np.min(phase_x)
+                    phase_y -= np.min(phase_y)
+                    if np.min(phase_x) != np.max(phase_x):
+                        phase_x /= np.max(phase_x)
+                    if np.min(phase_y) != np.max(phase_y):
+                        phase_y /= np.max(phase_y)
                     pts = len(result.data[idx].psd.image.x.coordinate)
                     image = np.zeros((pts, pts))
                     for i in range(pts):
                         for j in range(pts):
-                            image[i, j] = phase_x[i] * phase_y[j]
+                            image[i, j] = phase_x[i] + phase_y[j]
                     DisplayData.image2D(image, result.data[idx].psd.image.x.coordinate,
                                         result.data[idx].psd.image.y.coordinate,
                                         'WF', result.io.filedir, f'wf_image_{idx}',
-                                        result.data[idx].add.debug, result.data[idx].add.save)
+                                        False, result.data[idx].add.save)
                 if result.data[idx].add.debug:
-                    DisplayData.twoSpectra(result.data[idx].grating.coefficients[0].x.n,
-                                           result.data[idx].grating.coefficients[0].x.sn, 'x',
-                                           result.data[idx].grating.coefficients[0].y.n,
-                                           result.data[idx].grating.coefficients[0].y.sn, 'y', result.io.filedir,
-                                           f'grating_spectrum_{idx}.png')
+                    if result.data[idx].beam.bandwidth != 0 and 'phase' in result.data[idx].grating.slit:
+                        DisplayData.twoSpectra(result.data[idx].grating.coefficients[0].x.n,
+                                               result.data[idx].grating.coefficients[0].x.sn, 'x',
+                                               result.data[idx].grating.coefficients[0].y.n,
+                                               result.data[idx].grating.coefficients[0].y.sn, 'y', result.io.filedir,
+                                               f'grating_spectrum_{idx}.png')
+                    else:
+                        DisplayData.twoSpectra(result.data[idx].grating.coefficients.x.n,
+                                               result.data[idx].grating.coefficients.x.sn, 'x',
+                                               result.data[idx].grating.coefficients.y.n,
+                                               result.data[idx].grating.coefficients.y.sn, 'y', result.io.filedir,
+                                               f'grating_spectrum_{idx}.png')
 
                     DisplayData.intensities(result.data[idx].psd.image.x.coordinate,
                                             result.data[idx].psd.image.x.intensity /
