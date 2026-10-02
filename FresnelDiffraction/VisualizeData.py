@@ -77,7 +77,7 @@ def dependencies(result):
         DisplayData.calculationError(i_error, n_error, 1E-4, result.io.filedir, 'error_distribution.png')
         dependencies['error'] = {'n': n_error,
                                  'data': i_error}
-    if result.is_ok and (result.dependencies != '') and len(result.data) > 2:
+    elif result.is_ok and (result.dependencies != '') and len(result.data) > 2:
         z = np.arange(len(result.data), dtype=float)
         x = result.data[0].psd.image.x.coordinate
         image_x = np.zeros((len(x), len(result.data)))
