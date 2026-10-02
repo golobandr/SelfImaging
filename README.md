@@ -5,11 +5,30 @@ This is a standalone Python simulator for Fresnel/Talbot-style self-imaging: it 
 
 ## Description of files/directory structure 
 
-The source code folder `FresnelDiffraction` consists of a collection of python files (`*.py`-files), an accompanying input data files (provided as `.xlsx` files) are in `input_examples` folder.
+The source code folder `FresnelDiffraction` consists of Python files (`*.py`). Example input workbooks (`.xlsx`) are in the `input_examples` folder.
 
-The source code files are further described below. To set up a simulation, an input `TbtCalc` script must be started which allows to enter input data either via GUI or from `data_inputs` folder if it in the same folder with `TbtCalc` script. The input parameters are read from the “Grating”, “Beam”, “Beam.X”, “Beam.Y”, “Psd”, “Add” and "Dependencies" tabs of the Excel file and are organized structlike columns on the basis of `OutputData` structure. At the start of program execution, the input data file `<filename>.xlsx` is copied into the otput folder where calculation result will be saved as `result.dat` file also.
+The source code files are further described below. Start `TbtCalc.py` to run a simulation. When a `data_inputs` directory exists in the current working directory, every `.xls` and `.xlsx` file in that directory is processed. Otherwise, the script opens a file-selection dialog for choosing one or more Excel or text files. The input parameters are read from the “Grating”, “Beam”, “Beam.X”, “Beam.Y”, “Psd”, “Add”, and “Dependencies” worksheets and organized into structures based on `OutputData`.
 
 Example of Excel spreadsheets are given in `input_examples` folder.
+
+### Running a simulation
+
+Run the entry point from the `FresnelDiffraction` directory:
+
+```text
+python TbtCalc.py
+```
+
+For non-interactive batch processing, create a `data_inputs` directory in the current working directory and put the source workbooks there. In interactive mode, select one or more input files in the dialog.
+
+Each run creates a timestamped directory at `<input-file-directory>\results\<YYYY-MM-DD_HHMM>`. For each valid input workbook, the program:
+
+1. reads and validates the input;
+2. calculates the diffraction result;
+3. generates visualizations and saves output data;
+4. serializes the complete result object as `result.dat` in the file-specific output directory.
+
+Invalid input files are skipped and their validation message is recorded. The run directory contains `result.log`, which records the start and finish time, host details, and the processing outcome and duration for every selected file.
 
 ## Scripts of core functionalities located in the `FresnelDiffraction` folder: 
 
@@ -117,4 +136,3 @@ Included Python scripts do not require any installation, just copy to the workin
 
 `distanceDependency_cos_amp.xlsx`: Basic file used to simulate distance dependency for cosine-like amplitude grating  
 `distanceDependency_square_amp.xlsx`: File used to simulate grating to sample distance effect for binary amplitude grating 
-
