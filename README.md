@@ -134,5 +134,5 @@ Included Python scripts do not require any installation, just copy to the workin
 
 ## Example of input data files located in the `input_examples` folder: 
 
-`distanceDependency_cos_amp.xlsx`: Basic file used to simulate distance dependency for cosine-like amplitude grating  
-`distanceDependency_square_amp.xlsx`: File used to simulate grating to sample distance effect for binary amplitude grating 
+`input_examples/error*.xlsx`: Basic files used to define simulation errors for binary and cos gratings
+`input_examples/distance*.xlsx`: Basic files used to simulate distance dependency for binary amplitude grating under different conditions
