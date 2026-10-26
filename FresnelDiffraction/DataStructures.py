@@ -14,7 +14,7 @@ class Beam:
     coefficients = None
     pulse_time = 0
     chirp = 0
-    curvature_indexes = None
+    curvature_indexes = [1.5, 0]
 
 
 class Grating:

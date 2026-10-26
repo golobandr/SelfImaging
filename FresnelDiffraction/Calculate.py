@@ -1,3 +1,5 @@
+from cmath import isnan
+
 import numpy as np
 import DataStructures as data
 import math
