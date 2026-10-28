@@ -17,7 +17,7 @@ def beambandSpectrumIntensities(beam, l_max):
     else:
         b = max(beam.bandwidth,
                 beam.wavelength * beam.pulse_time / const_lightspeed * math.sqrt(1 + beam.chirp ** 2))
-        n = 6 * b * l_max / (beam.wavelength * 100)
+        n = int(b * l_max / (beam.wavelength * 100))
         delta_wl = beam.wavelength / n
         beam_band.delta = delta_wl
         wls_less = np.arange(beam.wavelength, beam.wavelength / (1 + 3 * b) - delta_wl, -delta_wl)
