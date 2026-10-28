@@ -1,7 +1,6 @@
 import DataStructures as data
 import numpy as np
 import DisplayData
-from FresnelDiffraction.DataStructures import Beam
 
 
 def images(result):
@@ -82,21 +81,13 @@ def dependencies(result):
         x = result.data[0].psd.image.x.coordinate
         image_x = np.zeros((len(x), len(result.data)))
         image_y = np.zeros((len(x), len(result.data)))
-        image_x_n = np.zeros((len(x), len(result.data)))
-        image_y_n = np.zeros((len(x), len(result.data)))
         for idx in range(len(result.data)):
-            image_x[:, idx] = result.data[idx].psd.image.x.intensity * result.data[idx].beam.intensity
-            image_y[:, idx] = result.data[idx].psd.image.y.intensity * result.data[idx].beam.intensity
             if result.data[idx].beam.intensity != 0:
-                image_x_n[:, idx] = ((result.data[idx].psd.image.x.intensity -
-                                      np.min(result.data[idx].psd.image.x.intensity)) /
-                                     np.max(result.data[idx].psd.image.x.intensity))
-                image_y_n[:, idx] = ((result.data[idx].psd.image.y.intensity -
-                                      np.min(result.data[idx].psd.image.y.intensity)) /
-                                     np.max(result.data[idx].psd.image.y.intensity))
+                image_x[:, idx] = result.data[idx].psd.image.x.intensity * result.data[idx].beam.intensity
+                image_y[:, idx] = result.data[idx].psd.image.y.intensity * result.data[idx].beam.intensity
             else:
-                image_x_n[:, idx] = result.data[idx].psd.image.x.intensity * result.data[idx].beam.intensity
-                image_y_n[:, idx] = result.data[idx].psd.image.y.intensity * result.data[idx].beam.intensity
+                image_x[:, idx] = result.data[idx].psd.image.x.intensity
+                image_y[:, idx] = result.data[idx].psd.image.y.intensity
             if 'distance' in result.dependencies.lower():
                 z[idx] = result.data[idx].psd.distance
             elif 'duty factor' in result.dependencies.lower():
@@ -122,20 +113,57 @@ def dependencies(result):
                                 False, True)
             DisplayData.image2D(image_y, z, x, 'Talbot carpet', result.io.filedir, 'carpet_y',
                                 False, True)
-            DisplayData.image2D(image_x_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_x_n',
-                                False, True)
-            DisplayData.image2D(image_y_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_y_n',
-                                False, True)
+            if 'normalized' in result.dependencies.lower():
+                image_x_n = np.zeros((len(x), len(result.data)))
+                image_y_n = np.zeros((len(x), len(result.data)))
+                for idx in range(len(result.data)):
+                    image_x_n[:, idx] = ((image_x[:, idx] - np.min(image_x[:, idx])) / np.max(image_x[:, idx]))
+                    image_y_n[:, idx] = ((image_y[:, idx] - np.min(image_y[:, idx])) / np.max(image_y[:, idx]))
+                DisplayData.image2D(image_x_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_x_n',
+                                    False, True)
+                DisplayData.image2D(image_y_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_y_n',
+                                    False, True)
+            if 'logarithmic' in result.dependencies.lower():
+                image_x_n = np.asarray(image_x)
+                low_values_flags = image_x_n < 5E-3
+                image_x_n[low_values_flags] = 5E-3
+                image_y_n = np.asarray(image_y)
+                low_values_flags = image_y_n < 3E-3
+                image_y_n[low_values_flags] = 5E-3
+                DisplayData.image2D(image_x_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_x_l',
+                                    False, True, True)
+                DisplayData.image2D(image_y_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_y_l',
+                                    False, True, True)
         elif 'x ' in result.dependencies.lower():
             DisplayData.image2D(image_x, z, x, 'Talbot carpet', result.io.filedir, 'carpet',
                                 False, True)
-            DisplayData.image2D(image_x_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_n',
-                                False, True)
+            if 'normalized' in result.dependencies.lower():
+                image_x_n = np.zeros((len(x), len(result.data)))
+                for idx in range(len(result.data)):
+                    image_x_n[:, idx] = ((image_x[:, idx] - np.min(image_x[:, idx])) / np.max(image_x[:, idx]))
+                DisplayData.image2D(image_x_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_n',
+                                    False, True)
+            if 'logarithmic' in result.dependencies.lower():
+                image_x_n = np.asarray(image_x)
+                low_values_flags = image_x_n < 5E-3
+                image_x_n[low_values_flags] = 5E-3
+                DisplayData.image2D(image_x_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_x_l',
+                                    False, True, True)
         elif 'y ' in result.dependencies.lower():
             DisplayData.image2D(image_y, z, x, 'Talbot carpet', result.io.filedir, 'carpet',
                                 False, True)
-            DisplayData.image2D(image_y_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_n',
-                                False, True)
+            if 'normalized' in result.dependencies.lower():
+                image_y_n = np.zeros((len(x), len(result.data)))
+                for idx in range(len(result.data)):
+                    image_y_n[:, idx] = ((image_y[:, idx] - np.min(image_y[:, idx])) / np.max(image_y[:, idx]))
+                DisplayData.image2D(image_y_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_n',
+                                    False, True)
+            if 'logarithmic' in result.dependencies.lower():
+                image_y_n = np.asarray(image_y)
+                low_values_flags = image_y_n < 5E-3
+                image_y_n[low_values_flags] = 5E-3
+                DisplayData.image2D(image_y_n, z, x, 'Talbot carpet', result.io.filedir, 'carpet_y_l',
+                                    False, True, True)
         if 'time' in result.dependencies.lower() and result.data[0].psd.time != 0:
             t = result.data[0].psd.image.t.x.time
             image_x_time = np.zeros((len(t), len(result.data)))

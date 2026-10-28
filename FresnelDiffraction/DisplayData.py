@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.colors as clr
 import os
 from PIL import Image
 import numpy as np
@@ -64,11 +65,15 @@ def calculationError(error, n, ymin, wd, fn):
     plt.close()
 
 
-def image2D(image, x, y, title_str, wd, fn, is_d, is_s):
+def image2D(image, x, y, title_str, wd, fn, is_d, is_s, is_l=False):
     image = image / np.max(image)
     plt.figure(figsize=(8, 8), dpi=600)
-    plt.imshow(image, extent=(x.min(), x.max(), y.min(), y.max()), cmap='jet',
-               interpolation='nearest', origin='lower', aspect='auto')
+    if is_l:
+        plt.imshow(image, extent=(x.min(), x.max(), y.min(), y.max()), cmap='jet',
+                   interpolation='nearest', origin='lower', aspect='auto', norm=clr.LogNorm())
+    else:
+        plt.imshow(image, extent=(x.min(), x.max(), y.min(), y.max()), cmap='jet',
+                   interpolation='nearest', origin='lower', aspect='auto')
     plt.colorbar()
     # plt.title(title_str)
     plt.savefig(os.path.join(wd, 'scaled_' + fn + '.png'), dpi=600)
@@ -77,4 +82,5 @@ def image2D(image, x, y, title_str, wd, fn, is_d, is_s):
         image = (image * 255).astype(np.uint8)
         Image.fromarray(image).save(os.path.join(wd, fn + '.bmp'), 'BMP')
     elif is_s:
-        plt.imsave(os.path.join(str(wd), fn + '.png'), image, cmap='jet')
+        if not is_l:
+            plt.imsave(os.path.join(str(wd), fn + '.png'), image, cmap='jet')

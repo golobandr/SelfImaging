@@ -1,5 +1,3 @@
-from cmath import isnan
-
 import numpy as np
 import DataStructures as data
 import math
@@ -10,22 +8,21 @@ width_init = 300
 const_lightspeed = 299_792_458_000  # in mm/s
 
 
-def beambandSpectrumIntensities(beam):
+def beambandSpectrumIntensities(beam, l_max):
     beam_band = data.Spectrum()
     if beam.bandwidth == 0 and beam.pulse_time == 0:
         beam_band.wavelength = beam.wavelength * np.ones(1)
         beam_band.amplitude = np.ones(1)
         beam_band.delta = beam.wavelength
     else:
-        delta_wl = beam.wavelength / 100
+        b = max(beam.bandwidth,
+                beam.wavelength * beam.pulse_time / const_lightspeed * math.sqrt(1 + beam.chirp ** 2))
+        n = 6 * b * l_max / beam.wavelength / 100
+        print(n)
+        delta_wl = beam.wavelength / n
         beam_band.delta = delta_wl
-        d_omega = max(beam.bandwidth,
-                      beam.wavelength * beam.pulse_time / const_lightspeed * math.sqrt(1 + beam.chirp ** 2))
-        wls_less = np.arange(beam.wavelength, beam.wavelength / (1 + 3 * d_omega) - delta_wl, -delta_wl)
-        if 3 * d_omega >= 1:
-            wls_more = np.arange(beam.wavelength, beam.wavelength * 100 + delta_wl, delta_wl)
-        else:
-            wls_more = np.arange(beam.wavelength, beam.wavelength / (1 - 3 * d_omega) + delta_wl, delta_wl)
+        wls_less = np.arange(beam.wavelength, beam.wavelength / (1 + 3 * b) - delta_wl, -delta_wl)
+        wls_more = np.arange(beam.wavelength, beam.wavelength / (1 - 3 * b) + delta_wl, delta_wl)
         wls = np.sort(np.array(list(set(np.append(wls_less, wls_more)))))
         if np.min(wls) <= 0:
             wls = wls[wls > 0]

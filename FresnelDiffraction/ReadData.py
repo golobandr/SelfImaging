@@ -262,7 +262,6 @@ def createStructures(filename):
     ret_val = {}
     copy_grating = True
     copy_beam = True
-    copy_beam_band = True
     for idx in range(data_len):
         ret_val[idx] = parseDataLine(grating.values[idx],
                                      [beam.values[idx],
@@ -295,9 +294,6 @@ def createStructures(filename):
                         if not (math.isnan(beam_y.values[idx][4]) and math.isnan(beam_y.values[idx - 1][4])) and \
                                 beam_y.values[idx][4] != beam_y.values[idx - 1][4]:
                             copy_beam = False
-        if idx > 0 and copy_beam_band and beam.values[idx][1] != 0 and \
-                beam.values[idx][1] != beam.values[idx - 1][1]:
-            copy_beam_band = False
 
     dependencies = ''
     if 'Dependencies' in xls.sheet_names:
@@ -307,7 +303,7 @@ def createStructures(filename):
         else:
             dependencies = ''
     xls.close()
-    return [True, [ret_val, dependencies, copy_grating, copy_beam, copy_beam_band]]
+    return [True, [ret_val, dependencies, copy_grating, copy_beam]]
 
 
 def fromFile(wd, filename):
@@ -333,7 +329,6 @@ def fromFile(wd, filename):
         rd.dependencies = retval[1]
         rd.copy_grating = retval[2]
         rd.copy_beam = retval[3]
-        rd.copy_beam_band = retval[4]
     else:
         is_ok = False
         rd.is_ok = False
