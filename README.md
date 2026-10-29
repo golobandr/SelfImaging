@@ -116,7 +116,11 @@ The computation stage processes each independent input data line, modeling grati
 
 ### Parallel Execution Boundary
 
-Processing is explicitly parallelized across available system CPU cores. Input structures are arranged so each data line contains the parameters required for independent execution; this is the primary concurrency boundary in `FresnelDiffraction/ProcessData.py`. Cross-line common beam, beam-band, and grating values can be represented as copied/shared output metadata rather than requiring coupled calculation.
+Each data line is independent and can be processed separately. `FresnelDiffraction/ProcessData.py` runs a single-line input in the current process to avoid multiprocessing startup overhead. For multiple lines, it uses a spawn-based process pool with no more workers than there are lines, and at most one fewer than the detected CPU count (with a minimum of one worker). Work is submitted in batches to limit per-task scheduling overhead. Common beam and grating coefficients are calculated once when the input marks those properties as shared.
+
+### Numerical Performance
+
+`FresnelDiffraction/Calculate.py` uses NumPy operations for detector pixel averaging and Fourier coefficient filtering rather than iterating over individual values in Python. Diffraction sums and spectral-to-time transforms are also vectorized in bounded chunks, limiting temporary-array memory use for larger calculations. These changes accelerate the numerical work while preserving the calculation output structure.
 
 ### Visualization and Output
 
