@@ -1,7 +1,6 @@
 import numpy as np
 import DataStructures as data
 import math
-import statistics
 import scipy
 
 width_init = 300
@@ -17,12 +16,13 @@ def beambandSpectrumIntensities(beam, l_max):
     else:
         b = max(beam.bandwidth,
                 beam.wavelength * beam.pulse_time / const_lightspeed * math.sqrt(1 + beam.chirp ** 2))
-        n = int(b * l_max / (beam.wavelength * 100))
-        delta_wl = beam.wavelength / n
+        n = int(b * l_max / (beam.wavelength * 10))
+        n = 10 if n < 10 else n
+        delta_wl = b * beam.wavelength / n
         beam_band.delta = delta_wl
-        wls_less = np.arange(beam.wavelength, beam.wavelength / (1 + 3 * b) - delta_wl, -delta_wl)
-        wls_more = np.arange(beam.wavelength, beam.wavelength / (1 - 3 * b) + delta_wl, delta_wl)
-        wls = np.sort(np.array(list(set(np.append(wls_less, wls_more)))))
+        wls = np.append(
+            np.sort(np.arange(beam.wavelength - delta_wl, beam.wavelength / (1 + 3 * b) - delta_wl, -delta_wl)),
+            np.arange(beam.wavelength, beam.wavelength / (1 - 3 * b) + delta_wl, delta_wl))
         if np.min(wls) <= 0:
             wls = wls[wls > 0]
         if len(wls) == 1:
@@ -64,14 +64,11 @@ def fourierCoefficientsUpdate(cn, width, period, accuracy):
         [N, _] = np.histogram(spectrum, bins=edges)
         counts = N * edges[:len(N)]
         counts = counts / np.sum(counts)
-        acc = np.zeros(len(counts))
-        for i in range(len(N)):
-            acc[i] = np.sum(counts[:i + 1])
-        index = 0
-        for i in range(len(N) - 2, 1, -1):
-            if acc[i] < accuracy and sum(N[i:]) > 20:
-                index = i
-                break
+        acc = np.cumsum(counts)
+        tail_counts = np.cumsum(N[::-1])[::-1]
+        eligible = (acc[2:-1] < accuracy) & (tail_counts[2:-1] > 20)
+        candidates = np.flatnonzero(eligible)
+        index = candidates[-1] + 2 if candidates.size else 0
         edge = edges[index]
         return edge
 
@@ -80,20 +77,8 @@ def fourierCoefficientsUpdate(cn, width, period, accuracy):
     cn = cn / np.sqrt(np.sum(spectrum))
     spectrum = spectrum / np.max(spectrum)
     edge = edgeCalculate(spectrum, accuracy)
-    cn_u = np.zeros(len(cn), dtype=complex)
-    f_u = np.zeros(len(cn))
-    s_u = np.zeros(len(cn))
-    i = 0
-    for n in range(len(f)):
-        if spectrum[n] > edge:
-            f_u[i] = f[n]
-            cn_u[i] = cn[n]
-            s_u[i] = spectrum[n]
-            i += 1
-    f_u = f_u[:i] / period
-    cn_u = cn_u[:i]
-    s_u = s_u[:i]
-    return [f_u, cn_u, s_u]
+    selected = spectrum > edge
+    return [f[selected] / period, cn[selected], spectrum[selected]]
 
 
 def gratingCoefficients(grating, wl, accuracy):
@@ -168,30 +153,22 @@ def gratingCoefficients(grating, wl, accuracy):
 
 def outputDistribution(grating, beam, psd):
     def diffraction1DAtZeroDistance(n, cn, waist, a, x):
-        u = np.zeros(len(x), dtype=complex)
         y = 1j * 2 * math.pi * x
         a_max = max(x)
         if a != 0:
             a_max = 1 / (2 * a)
-        for i in range(len(x)):
-            if abs(x[i]) <= a_max:
-                for k in range(len(n)):
-                    u[i] += cn[k] * np.exp(-y[i] * n[k])
+        selected = np.abs(x) <= a_max
+        u = np.zeros(len(x), dtype=complex)
+        u[selected] = np.exp(-y[selected, None] * n) @ cn
         u = u * np.exp(-(x * waist) ** 2 / 2)
         return u
 
     def averagePixel(intensity, x, sd):
-        if len(intensity.shape) == len(x.shape):
+        if intensity.ndim == 1:
             distribution = data.Distribution()
-            int_out = np.zeros(len(x))
-            for i in range(len(x)):
-                int_out[i] = statistics.mean(intensity[i * sd:(i + 1) * sd])
         else:
             distribution = data.TimeDistribution()
-            int_out = np.zeros((len(x), intensity.shape[1]))
-            for j in range(intensity.shape[1]):
-                for i in range(len(x)):
-                    int_out[i, j] = statistics.mean(intensity[i * sd:(i + 1) * sd, j])
+        int_out = intensity.reshape((len(x), sd) + intensity.shape[1:]).mean(axis=1)
         distribution.coordinate = x
         distribution.intensity = int_out
         return distribution
@@ -201,16 +178,18 @@ def outputDistribution(grating, beam, psd):
         bs = 1 / np.sqrt(b)
         x = -(x / distance + 0.5 * math.sin(angle)) / wl
         u = np.zeros(len(x), dtype=complex)
-        for i in range(len(x)):
-            for j in range(len(m)):
-                for k in range(len(n)):
-                    c = 1j * math.pi * (x[i] + n[k] + m[j])
-                    exp_a = np.exp(b * c ** 2) * cn[k] * am[j]
-                    if a != 0:
-                        cb = c * b
-                        exp_a *= 0.5 * (scipy.special.erf(bs * (1 / (2 * a) - cb)) +
-                                        scipy.special.erf(bs * (1 / (2 * a) + cb)))
-                    u[i] += exp_a
+        coefficient_count = max(1, len(m) * len(n))
+        points_per_chunk = max(1, 131_072 // coefficient_count)
+        for start in range(0, len(x), points_per_chunk):
+            stop = min(start + points_per_chunk, len(x))
+            c = 1j * math.pi * (
+                x[start:stop, None, None] + n[None, None, :] + m[None, :, None])
+            exp_a = np.exp(b * c ** 2) * cn[None, None, :] * am[None, :, None]
+            if a != 0:
+                cb = c * b
+                exp_a *= 0.5 * (scipy.special.erf(bs * (1 / (2 * a) - cb)) +
+                                scipy.special.erf(bs * (1 / (2 * a) + cb)))
+            u[start:stop] = np.sum(exp_a, axis=(1, 2))
         return u
 
     def spectralDiffraction1D(bba, n, cn, m, am, wl, angle, waist, wfc, a, distance, x):
@@ -270,11 +249,12 @@ def outputDistribution(grating, beam, psd):
         utx = np.zeros((len(x), len(time)), dtype=complex)
         uty = np.zeros((len(x), len(time)), dtype=complex)
         omega = 2 * math.pi * const_lightspeed / beam.band.wavelength
-        for j in range(len(time)):
-            for i in range(len(omega)):
-                exp_wt = np.exp(-1j * omega[i] * time[j])
-                utx[:, j] += exp_wt * amplitude_x[:, i]
-                uty[:, j] += exp_wt * amplitude_y[:, i]
+        time_chunk_size = 256
+        for start in range(0, len(time), time_chunk_size):
+            stop = min(start + time_chunk_size, len(time))
+            exp_wt = np.exp(-1j * omega[:, None] * time[None, start:stop])
+            utx[:, start:stop] = amplitude_x @ exp_wt
+            uty[:, start:stop] = amplitude_y @ exp_wt
         itx = np.abs(utx) ** 2
         ity = np.abs(uty) ** 2
     else:

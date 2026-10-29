@@ -43,13 +43,25 @@ def fromStructure(ipt):
     if ipt.copy_beam:
         ipt.copy_data.beam = Calculate.beamCoefficients(ipt.data[0].beam, ipt.data[0].add.accuracy)
 
-    ctx = multiprocessing.get_context("spawn")
     tmp_data = {}
-    with concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count() - 1, mp_context=ctx) as executor:
-        tmp_data_future = {executor.submit(fromLine, idx, ipt.data[idx], ipt.copy_beam,
-                                           ipt.copy_grating, ipt.copy_data, ) for idx in range(len(ipt.data))}
-        for future in concurrent.futures.as_completed(tmp_data_future):
-            tmp_data.update(future.result())
+    worker_count = min(len(ipt.data), max(1, (os.cpu_count() or 1) - 1))
+    if worker_count <= 1:
+        for idx, line in enumerate(ipt.data):
+            tmp_data.update(fromLine(idx, line, ipt.copy_beam, ipt.copy_grating, ipt.copy_data))
+    else:
+        ctx = multiprocessing.get_context("spawn")
+        chunk_size = max(1, math.ceil(len(ipt.data) / (worker_count * 4)))
+        with concurrent.futures.ProcessPoolExecutor(max_workers=worker_count, mp_context=ctx) as executor:
+            results = executor.map(
+                fromLine,
+                range(len(ipt.data)),
+                ipt.data,
+                [ipt.copy_beam] * len(ipt.data),
+                [ipt.copy_grating] * len(ipt.data),
+                [ipt.copy_data] * len(ipt.data),
+                chunksize=chunk_size)
+            for result in results:
+                tmp_data.update(result)
     data = []
     for i in range(len(tmp_data)):
         data.append(tmp_data[i])

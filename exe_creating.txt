@@ -1,0 +1,1 @@
+python -m nuitka --onefile --follow-imports --include-package=pandas --enable-plugin=tk-inter|PySide6|PySide2|PyQt6|PyQt5 .\TbtCalc.py
