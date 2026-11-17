@@ -146,7 +146,7 @@ def gratingCoefficients(grating, wl, accuracy):
                 pd = (grating.index[0] - 1) * grating.depth / wavelength
             else:
                 pd = (grating.index[0] + grating.index[1] * wavelength - 1) * grating.depth / wavelength
-            grating.phase_depth = 2 * math.pi * pd
+            grating.phase_depth = math.pi * pd
             opt_coeff.append(setCoefficientsForWL(grating))
         return opt_coeff
 
